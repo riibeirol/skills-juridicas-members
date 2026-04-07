@@ -621,7 +621,9 @@
   const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
 
   const AREA_NAMES = {
     trabalhista:    'Trabalhista',
@@ -818,28 +820,16 @@
       return;
     }
 
-    // Verificar sessão
-    let session = null;
-
-    const { data: { session: s1 } } = await supabase.auth.getSession();
-    session = s1;
-
-    if (!session) {
-      // Tenta capturar token do hash da URL (redirect do magic link)
-      session = await new Promise((resolve) => {
-        const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
-          if (event === 'SIGNED_IN' && sess) {
-            listener.subscription.unsubscribe();
-            resolve(sess);
-          }
-          if (event === 'INITIAL_SESSION') {
-            listener.subscription.unsubscribe();
-            resolve(null);
-          }
-        });
-        setTimeout(() => resolve(null), 3000);
-      });
+    // Verificar sessão — mesmo padrão robusto do dashboard
+    if (window.location.hash.includes('access_token')) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
+
+    let session = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      session = data.session;
+    } catch(e) {}
 
     if (!session) {
       window.location.href = 'index.html';
@@ -855,7 +845,8 @@
       .eq('email', email);
 
     const unlockedAreas = purchases ? purchases.map(p => p.area) : [];
-    const hasAccess = unlockedAreas.includes('all') || unlockedAreas.includes(areaId);
+    const isAdmin = email === 'leonardo@rsabr.adv.br';
+    const hasAccess = isAdmin || unlockedAreas.includes('all') || unlockedAreas.includes(areaId);
 
     if (!hasAccess) {
       window.location.href = 'dashboard.html';
