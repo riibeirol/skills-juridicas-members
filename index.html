@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skills Jurídicas com IA — Acesso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --border: #1e1e1e;
+      --green: #00ff88;
+      --green-dim: rgba(0, 255, 136, 0.12);
+      --green-glow: 0 0 20px rgba(0, 255, 136, 0.35);
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* Partículas de fundo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,255,136,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,255,136,0.03) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    /* Logo */
+    .logo {
+      text-align: center;
+    }
+
+    .logo-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      opacity: 0.8;
+    }
+
+    .logo-title {
+      font-family: var(--font-mono);
+      font-size: clamp(22px, 5vw, 32px);
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: var(--green-glow);
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-title span {
+      color: var(--text);
+    }
+
+    .logo-sub {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-top: 10px;
+      font-weight: 300;
+    }
+
+    /* Card de login */
+    .card {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px;
+      transition: border-color 0.3s;
+    }
+
+    .card:focus-within {
+      border-color: rgba(0, 255, 136, 0.3);
+      box-shadow: var(--green-glow);
+    }
+
+    .card-title {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    /* Form */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    input[type="email"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    input[type="email"]::placeholder {
+      color: #444;
+    }
+
+    input[type="email"]:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 15px 24px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn:hover:not(:disabled) {
+      opacity: 0.9;
+      box-shadow: var(--green-glow);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.99);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Estados */
+    .message {
+      display: none;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .message.success {
+      background: rgba(0, 255, 136, 0.08);
+      border: 1px solid rgba(0, 255, 136, 0.25);
+      color: var(--green);
+    }
+
+    .message.error {
+      background: rgba(255, 60, 60, 0.08);
+      border: 1px solid rgba(255, 60, 60, 0.25);
+      color: #ff6b6b;
+    }
+
+    /* Loader spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Rodapé */
+    .footer {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .footer a {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Animação de entrada */
+    .container { animation: fadeIn 0.5s ease forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="logo">
+    <div class="logo-tag">RSA Advocacia</div>
+    <div class="logo-title">Skills Jurídicas<span> com IA</span></div>
+    <div class="logo-sub">Área exclusiva para membros</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Acesse sua conta</div>
+    <div class="card-desc">
+      Informe seu email cadastrado para receber o link de acesso. Sem senha — simples e seguro.
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label for="email">Seu email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="seunome@exemplo.com.br"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <div class="message" id="msg"></div>
+
+      <button type="submit" class="btn" id="btnSubmit">
+        Entrar com link de acesso
+      </button>
+    </form>
+  </div>
+
+  <div class="footer">
+    Ao entrar, você concorda com os termos de uso.<br />
+    Dúvidas? <a href="mailto:contato@rsaadvocacia.com.br">contato@rsaadvocacia.com.br</a>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const form = document.getElementById('loginForm');
+  const emailInput = document.getElementById('email');
+  const btn = document.getElementById('btnSubmit');
+  const msg = document.getElementById('msg');
+
+  function showMsg(text, type) {
+    msg.textContent = text;
+    msg.className = `message ${type}`;
+    msg.style.display = 'block';
+    if (type === 'success') {
+      // Anima entrada
+      msg.style.opacity = '0';
+      requestAnimationFrame(() => {
+        msg.style.transition = 'opacity 0.4s';
+        msg.style.opacity = '1';
+      });
+    }
+  }
+
+  // Verificar sessão ativa — se sim, redireciona direto para o dashboard
+  (async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      window.location.href = 'dashboard.html';
+    }
+  })();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = emailInput.value.trim().toLowerCase();
+
+    if (!email || !email.includes('@')) {
+      showMsg('Informe um email válido.', 'error');
+      emailInput.focus();
+      return;
+    }
+
+    // UI: loading
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Enviando link...';
+    msg.style.display = 'none';
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard.html`,
+        },
+      });
+
+      if (error) throw error;
+
+      // Sucesso
+      form.querySelector('.form-group').style.display = 'none';
+      btn.style.display = 'none';
+      showMsg(
+        '✓ Verifique seu email — enviamos o link de acesso.\n\nClique no link recebido para entrar na plataforma.',
+        'success'
+      );
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      btn.textContent = 'Entrar com link de acesso';
+      showMsg('Erro ao enviar o link. Tente novamente ou verifique o email informado.', 'error');
+    }
+  });
+</script>
+
+</body>
+</html>

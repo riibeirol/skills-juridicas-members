@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skills Jurídicas com IA — Área</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #161616;
+      --bg4: #0d0d0d;
+      --border: #1e1e1e;
+      --border2: #252525;
+      --green: #00ff88;
+      --green-dim: rgba(0, 255, 136, 0.1);
+      --green-glow: 0 0 24px rgba(0, 255, 136, 0.28);
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --text-muted: #555;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 35% at 50% -5%, rgba(0,255,136,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ==================== HEADER ==================== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-back:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .header-logo {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0,255,136,0.4);
+    }
+
+    .header-area-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    /* ==================== MAIN ==================== */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 100px;
+    }
+
+    /* Loading */
+    #loadingState {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 16px;
+    }
+
+    .spinner-big {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #contentState { display: none; }
+
+    /* Page header */
+    .page-header {
+      margin-bottom: 48px;
+    }
+
+    .page-breadcrumb {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .page-breadcrumb a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+
+    .page-breadcrumb a:hover { color: var(--green); }
+
+    .page-title {
+      font-family: var(--font-mono);
+      font-size: clamp(26px, 5vw, 40px);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .page-title span { color: var(--green); }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* ==================== TUTORIAL ==================== */
+    .tutorial-section {
+      margin-bottom: 56px;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+
+    .tutorial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .tutorial-step {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s;
+    }
+
+    .tutorial-step.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tutorial-step:hover {
+      border-color: rgba(0, 255, 136, 0.25);
+    }
+
+    .step-number {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      opacity: 0.7;
+    }
+
+    .step-icon {
+      font-size: 26px;
+      line-height: 1;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .step-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .step-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* Aviso revisão */
+    .review-notice {
+      background: rgba(255, 200, 0, 0.05);
+      border: 1px solid rgba(255, 200, 0, 0.15);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(255, 200, 0, 0.75);
+      line-height: 1.6;
+    }
+
+    .review-notice-icon { flex-shrink: 0; font-size: 16px; }
+
+    /* ==================== SKILLS ==================== */
+    .skills-section {}
+
+    .skills-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .skill-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      animation: cardIn 0.35s ease both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .skill-card:hover {
+      border-color: rgba(0, 255, 136, 0.2);
+    }
+
+    .skill-card.expanded {
+      border-color: rgba(0, 255, 136, 0.35);
+      box-shadow: var(--green-glow);
+    }
+
+    /* Cabeçalho da skill */
+    .skill-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .skill-header:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .skill-num {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: rgba(0, 255, 136, 0.25);
+      min-width: 36px;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .expanded .skill-num {
+      color: var(--green);
+    }
+
+    .skill-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .skill-name {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .skill-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .skill-toggle {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: transform 0.3s, color 0.2s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .expanded .skill-toggle {
+      transform: rotate(45deg);
+      color: var(--green);
+    }
+
+    /* Corpo expandido */
+    .skill-body {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 0;
+    }
+
+    .skill-card.expanded .skill-body {
+      display: block;
+    }
+
+    /* Tabs quando_usar / prompt */
+    .skill-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .skill-tab {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 10px 18px;
+      cursor: pointer;
+      color: var(--text-dim);
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .skill-tab.active {
+      color: var(--green);
+      border-bottom-color: var(--green);
+    }
+
+    .skill-tab-pane { display: none; }
+    .skill-tab-pane.active { display: block; }
+
+    /* Quando usar */
+    .quando-usar {
+      padding: 16px 20px;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .quando-usar ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .quando-usar ul li::before {
+      content: '→ ';
+      color: var(--green);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    /* Prompt */
+    .prompt-container {
+      position: relative;
+      background: var(--bg4);
+    }
+
+    .prompt-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .prompt-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .btn-copy {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green-dim);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 7px;
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-copy:hover {
+      background: rgba(0, 255, 136, 0.18);
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+    }
+
+    .btn-copy.copied {
+      background: rgba(0, 255, 136, 0.22);
+      color: var(--green);
+    }
+
+    .prompt-text {
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.8;
+      color: #c8c8c8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .prompt-text::-webkit-scrollbar { width: 6px; }
+    .prompt-text::-webkit-scrollbar-track { background: transparent; }
+    .prompt-text::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+
+    /* Dicas */
+    .skill-dicas {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 255, 136, 0.02);
+    }
+
+    .dicas-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .dicas-text {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state-icon { font-size: 40px; margin-bottom: 16px; }
+    .empty-state h3 {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p { font-size: 13px; }
+
+    @media (max-width: 600px) {
+      main { padding: 32px 16px 80px; }
+      .tutorial-grid { grid-template-columns: 1fr 1fr; }
+      .skill-desc { display: none; }
+      .prompt-text { font-size: 11px; }
+    }
+
+    @media (max-width: 400px) {
+      .tutorial-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="dashboard.html" class="btn-back">← Dashboard</a>
+    <div class="header-logo">Skills Jurídicas</div>
+    <div class="header-area-name" id="headerAreaName"></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Loading -->
+  <div id="loadingState">
+    <div class="spinner-big"></div>
+    <div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim);">Carregando skills...</div>
+  </div>
+
+  <!-- Conteúdo -->
+  <div id="contentState">
+
+    <div class="page-header">
+      <div class="page-breadcrumb">
+        <a href="dashboard.html">Dashboard</a>
+        <span>/</span>
+        <span id="breadAreaName"></span>
+      </div>
+      <div class="page-title">Skills de <span id="pageAreaName">...</span></div>
+      <div class="page-subtitle" id="pageSubtitle">Prompts prontos para usar no Claude.</div>
+    </div>
+
+    <!-- Tutorial -->
+    <div class="tutorial-section">
+      <div class="section-label">Como usar</div>
+      <div class="tutorial-grid">
+
+        <div class="tutorial-step" id="step1">
+          <div class="step-number">PASSO 01</div>
+          <span class="step-icon">💻</span>
+          <div class="step-title">Abra o Claude</div>
+          <div class="step-desc">Acesse <strong style="color:#e8e8e8">claude.ai</strong> ou o app Claude no seu computador ou celular.</div>
+        </div>
+
+        <div class="tutorial-step" id="step2">
+          <div class="step-number">PASSO 02</div>
+          <span class="step-icon">📋</span>
+          <div class="step-title">Copie a skill</div>
+          <div class="step-desc">Clique no card da skill desejada e pressione o botão <strong style="color:#e8e8e8">Copiar Prompt</strong>.</div>
+        </div>
+
+        <div class="tutorial-step" id="step3">
+          <div class="step-number">PASSO 03</div>
+          <span class="step-icon">✏️</span>
+          <div class="step-title">Cole e personalize</div>
+          <div class="step-desc">Cole no Claude e preencha os campos com os dados reais do caso nos espaços indicados.</div>
+        </div>
+
+        <div class="tutorial-step" id="step4">
+          <div class="step-number">PASSO 04</div>
+          <span class="step-icon">✅</span>
+          <div class="step-title">Revise sempre</div>
+          <div class="step-desc">Todo conteúdo gerado deve ser revisado e validado pelo advogado antes de protocolar.</div>
+        </div>
+
+      </div>
+
+      <div class="review-notice">
+        <span class="review-notice-icon">⚠️</span>
+        <span>As skills são ferramentas de apoio. O advogado é sempre responsável pela revisão do conteúdo antes do uso em processos reais.</span>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="skills-section">
+      <div class="section-label" id="skillsLabel">Skills da área</div>
+      <div class="skills-list" id="skillsList"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const AREA_NAMES = {
+    trabalhista:    'Trabalhista',
+    civel:          'Cível',
+    penal:          'Penal',
+    previdenciario: 'Previdenciário',
+    familia:        'Família',
+    tributario:     'Tributário',
+    contratos:      'Contratos',
+    societario:     'Societário',
+    consumidor:     'Consumidor',
+    imobiliario:    'Imobiliário',
+  };
+
+  const AREA_DESCS = {
+    trabalhista:    'Petições, contestações, cálculos e recursos na Justiça do Trabalho.',
+    civel:          'Peças cíveis completas — iniciais, contestações, apelações e mais.',
+    penal:          'Defesas criminais, habeas corpus, liberdade provisória e recursos.',
+    previdenciario: 'Benefícios, aposentadorias, revisões e ações previdenciárias.',
+    familia:        'Divórcio, guarda, alimentos, inventário e demais ações de família.',
+    tributario:     'Planejamento tributário, impugnações e recursos administrativos.',
+    contratos:      'Análise, redação e revisão de contratos em geral.',
+    societario:     'Constituição de empresas, acordos e operações societárias.',
+    consumidor:     'Ações consumeristas, defesas e peças para o CDC.',
+    imobiliario:    'Contratos, ações possessórias, regularização e direito imobiliário.',
+  };
+
+  // Pegar área da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const areaId = urlParams.get('area') || '';
+
+  // Formatar texto quando_usar (lista de itens com - ou bullet)
+  function formatQuandoUsar(text) {
+    if (!text) return '<p style="color:var(--text-dim);font-size:13px">Informação não disponível.</p>';
+    const lines = text.split('\n').filter(l => l.trim());
+    const items = lines.map(l => l.replace(/^[-•*]\s*/, '').trim()).filter(Boolean);
+    if (items.length === 0) return `<p>${text}</p>`;
+    return '<ul>' + items.map(i => `<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderSkills(skills) {
+    const list = document.getElementById('skillsList');
+    list.innerHTML = '';
+
+    if (!skills || skills.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📂</div>
+          <h3>Nenhuma skill encontrada</h3>
+          <p>As skills desta área ainda estão sendo carregadas.<br>Execute o seed para populá-las.</p>
+        </div>`;
+      return;
+    }
+
+    document.getElementById('skillsLabel').textContent = `${skills.length} skills nesta área`;
+
+    skills.forEach((skill, index) => {
+      const card = document.createElement('div');
+      card.className = 'skill-card';
+      card.style.animationDelay = `${index * 0.04}s`;
+
+      const numStr = String(skill.numero).padStart(2, '0');
+
+      card.innerHTML = `
+        <div class="skill-header">
+          <div class="skill-num">${numStr}</div>
+          <div class="skill-info">
+            <div class="skill-name">${escapeHtml(skill.nome)}</div>
+            <div class="skill-desc">${escapeHtml(skill.descricao || 'Clique para ver o prompt')}</div>
+          </div>
+          <div class="skill-toggle">+</div>
+        </div>
+
+        <div class="skill-body">
+          <div class="skill-tabs">
+            <div class="skill-tab active" data-tab="prompt">Prompt</div>
+            ${skill.quando_usar ? '<div class="skill-tab" data-tab="quando">Quando usar</div>' : ''}
+          </div>
+
+          <div class="skill-tab-pane active" data-pane="prompt">
+            <div class="prompt-container">
+              <div class="prompt-toolbar">
+                <span class="prompt-label">Prompt completo</span>
+                <button class="btn-copy" data-prompt="${escapeHtml(skill.prompt)}">
+                  <span>⧉</span> Copiar Prompt
+                </button>
+              </div>
+              <div class="prompt-text">${escapeHtml(skill.prompt)}</div>
+            </div>
+          </div>
+
+          ${skill.quando_usar ? `
+          <div class="skill-tab-pane" data-pane="quando">
+            <div class="quando-usar">
+              ${formatQuandoUsar(skill.quando_usar)}
+            </div>
+          </div>` : ''}
+
+          ${skill.dicas ? `
+          <div class="skill-dicas">
+            <div class="dicas-title">💡 Dicas de uso</div>
+            <div class="dicas-text">${escapeHtml(skill.dicas).replace(/\n/g, '<br>')}</div>
+          </div>` : ''}
+        </div>
+      `;
+
+      // Toggle expand/collapse
+      const header = card.querySelector('.skill-header');
+      header.addEventListener('click', () => {
+        const isExpanded = card.classList.contains('expanded');
+        // Fecha todos os outros
+        document.querySelectorAll('.skill-card.expanded').forEach(c => {
+          if (c !== card) c.classList.remove('expanded');
+        });
+        card.classList.toggle('expanded', !isExpanded);
+        if (!isExpanded) {
+          // Scroll suave para o card
+          setTimeout(() => {
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 100);
+        }
+      });
+
+      // Tabs
+      card.querySelectorAll('.skill-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const pane = tab.dataset.tab;
+          card.querySelectorAll('.skill-tab').forEach(t => t.classList.remove('active'));
+          card.querySelectorAll('.skill-tab-pane').forEach(p => p.classList.remove('active'));
+          tab.classList.add('active');
+          card.querySelector(`[data-pane="${pane}"]`).classList.add('active');
+        });
+      });
+
+      // Copiar
+      card.querySelector('.btn-copy').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const prompt = skill.prompt;
+        try {
+          await navigator.clipboard.writeText(prompt);
+          btn.innerHTML = '<span>✓</span> Copiado!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = '<span>⧉</span> Copiar Prompt';
+            btn.classList.remove('copied');
+          }, 2000);
+        } catch {
+          // Fallback para dispositivos sem clipboard API
+          const ta = document.createElement('textarea');
+          ta.value = prompt;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          btn.innerHTML = '<span>✓</span> Copiado!';
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = '<span>⧉</span> Copiar Prompt';
+            btn.classList.remove('copied');
+          }, 2000);
+        }
+      });
+
+      list.appendChild(card);
+    });
+  }
+
+  // Animação dos passos do tutorial
+  function animateTutorial() {
+    const steps = ['step1', 'step2', 'step3', 'step4'];
+    steps.forEach((id, i) => {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('visible');
+      }, 200 + i * 180);
+    });
+  }
+
+  async function init() {
+    if (!areaId || !AREA_NAMES[areaId]) {
+      window.location.href = 'dashboard.html';
+      return;
+    }
+
+    // Verificar sessão
+    let session = null;
+
+    const { data: { session: s1 } } = await supabase.auth.getSession();
+    session = s1;
+
+    if (!session) {
+      // Tenta capturar token do hash da URL (redirect do magic link)
+      session = await new Promise((resolve) => {
+        const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
+          if (event === 'SIGNED_IN' && sess) {
+            listener.subscription.unsubscribe();
+            resolve(sess);
+          }
+          if (event === 'INITIAL_SESSION') {
+            listener.subscription.unsubscribe();
+            resolve(null);
+          }
+        });
+        setTimeout(() => resolve(null), 3000);
+      });
+    }
+
+    if (!session) {
+      window.location.href = 'index.html';
+      return;
+    }
+
+    const email = session.user.email;
+
+    // Verificar se tem acesso à área
+    const { data: purchases } = await supabase
+      .from('skills_purchases')
+      .select('area')
+      .eq('email', email);
+
+    const unlockedAreas = purchases ? purchases.map(p => p.area) : [];
+    const hasAccess = unlockedAreas.includes('all') || unlockedAreas.includes(areaId);
+
+    if (!hasAccess) {
+      window.location.href = 'dashboard.html';
+      return;
+    }
+
+    // Atualizar textos da página
+    const areaName = AREA_NAMES[areaId];
+    document.title = `Skills de ${areaName} — Skills Jurídicas com IA`;
+    document.getElementById('headerAreaName').textContent = areaName;
+    document.getElementById('breadAreaName').textContent = areaName;
+    document.getElementById('pageAreaName').textContent = areaName;
+    document.getElementById('pageSubtitle').textContent = AREA_DESCS[areaId] || 'Prompts prontos para usar no Claude.';
+
+    // Buscar skills da área
+    const { data: skills, error } = await supabase
+      .from('skills_content')
+      .select('*')
+      .eq('area', areaId)
+      .order('numero', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao buscar skills:', error);
+    }
+
+    // Exibir conteúdo
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('contentState').style.display = 'block';
+
+    // Animar tutorial
+    animateTutorial();
+
+    // Renderizar skills
+    renderSkills(skills || []);
+  }
+
+  init();
+</script>
+
+</body>
+</html>
