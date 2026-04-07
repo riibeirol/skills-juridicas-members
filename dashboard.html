@@ -680,13 +680,19 @@
     document.getElementById('userEmail').textContent = email;
     document.getElementById('userName').textContent = getFirstName(email);
 
-    // Buscar compras do usuário
-    const { data: purchases, error: purchError } = await supabase
-      .from('skills_purchases')
-      .select('area')
-      .eq('email', email);
+    // Admin tem acesso total sem precisar de registro de compra
+    const isAdmin = email === 'leonardo@rsabr.adv.br';
 
-    const unlockedAreas = purchases ? purchases.map(p => p.area) : [];
+    let unlockedAreas = [];
+    if (isAdmin) {
+      unlockedAreas = ['all'];
+    } else {
+      const { data: purchases } = await supabase
+        .from('skills_purchases')
+        .select('area')
+        .eq('email', email);
+      unlockedAreas = purchases ? purchases.map(p => p.area) : [];
+    }
 
     // Renderizar
     renderAreas(unlockedAreas);
