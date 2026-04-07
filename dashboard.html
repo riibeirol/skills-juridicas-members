@@ -631,39 +631,32 @@
   }
 
   async function init() {
-    const hasHashToken = window.location.hash.includes('access_token');
+    // Se tem token no hash, aguarda Supabase processar
+    if (window.location.hash.includes('access_token')) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
 
-    // Se tem token no hash, espera o Supabase processar via onAuthStateChange
-    const currentSession = await new Promise((resolve) => {
-      const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
-        if (event === 'SIGNED_IN' && sess) {
-          listener.subscription.unsubscribe();
-          resolve(sess);
-        } else if (event === 'INITIAL_SESSION') {
+    let { data: { session: currentSession } } = await supabase.auth.getSession();
+
+    // Segunda tentativa via onAuthStateChange
+    if (!currentSession) {
+      currentSession = await new Promise((resolve) => {
+        const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
           if (sess) {
             listener.subscription.unsubscribe();
             resolve(sess);
-          } else if (!hasHashToken) {
-            // Sem token no hash e sem sessão = não está logado
-            listener.subscription.unsubscribe();
-            resolve(null);
           }
-          // Se tem hash token, aguarda o SIGNED_IN vir
-        }
+        });
+        setTimeout(() => { listener.subscription.unsubscribe(); resolve(null); }, 5000);
       });
-      // Timeout de segurança
-      setTimeout(() => {
-        listener.subscription.unsubscribe();
-        resolve(null);
-      }, 8000);
-    });
+    }
 
     if (!currentSession) {
       window.location.href = 'index.html';
       return;
     }
 
-    const email = currentSession.user ? currentSession.user.email : currentSession.email;
+    const email = currentSession.user?.email || currentSession.email;
 
     // UI
     document.getElementById('userEmail').textContent = email;
