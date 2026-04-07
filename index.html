@@ -292,6 +292,11 @@
 
       <div class="message" id="msg"></div>
 
+      <div id="resendArea" style="display:none;text-align:center;margin-top:20px">
+        <p style="font-size:12px;color:#555;margin-bottom:12px">Não recebeu? Verifique o spam.</p>
+        <button type="button" id="resendBtn" disabled style="background:transparent;border:1px solid #1e1e1e;border-radius:8px;padding:10px 20px;color:#888;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;transition:all .2s;width:100%">Reenviar em <span id="countdown" style="color:#00ff88">60s</span></button>
+      </div>
+
       <button type="submit" class="btn" id="btnSubmit">
         Entrar com link de acesso
       </button>
@@ -363,7 +368,8 @@ window.addEventListener('DOMContentLoaded', async function() {
 
       form.querySelector('.form-group').style.display = 'none';
       btn.style.display = 'none';
-      showMsg('✓ Verifique seu email — enviamos o link de acesso. Clique no link para entrar.', 'success');
+      showMsg('✓ Link enviado para <strong>' + email + '</strong>. Verifique sua caixa de entrada.', 'success');
+      startResendTimer(email, supabase);
     } catch (err) {
       console.error(err);
       btn.disabled = false;
@@ -371,6 +377,44 @@ window.addEventListener('DOMContentLoaded', async function() {
       showMsg('Erro ao enviar o link. Tente novamente.', 'error');
     }
   });
+
+  function startResendTimer(email, supabase) {
+    const resendDiv = document.getElementById('resendArea');
+    const countdownEl = document.getElementById('countdown');
+    const resendBtn = document.getElementById('resendBtn');
+    resendDiv.style.display = 'block';
+
+    let seconds = 60;
+    countdownEl.textContent = seconds + 's';
+    resendBtn.disabled = true;
+
+    const interval = setInterval(function() {
+      seconds--;
+      countdownEl.textContent = seconds + 's';
+      if (seconds <= 0) {
+        clearInterval(interval);
+        countdownEl.textContent = '';
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Reenviar link';
+      }
+    }, 1000);
+
+    resendBtn.onclick = async function() {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Reenviando...';
+      try {
+        await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin + '/dashboard.html' },
+        });
+        resendBtn.textContent = 'Reenviado ✓';
+        setTimeout(function() { startResendTimer(email, supabase); }, 500);
+      } catch(e) {
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Reenviar link';
+      }
+    };
+  }
 }); // DOMContentLoaded
 </script>
 
