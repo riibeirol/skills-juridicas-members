@@ -814,73 +814,94 @@
     });
   }
 
+  function showError(msg) {
+    document.getElementById('loadingState').innerHTML =
+      '<p style="color:#ff6b6b;font-family:monospace;font-size:13px;text-align:center;padding:20px">' + msg + '<br><br>' +
+      '<a href="dashboard.html" style="color:#00ff88">← Voltar ao dashboard</a></p>';
+  }
+
   async function init() {
-    if (!areaId || !AREA_NAMES[areaId]) {
-      window.location.href = 'dashboard.html';
-      return;
-    }
-
-    // Verificar sessão — mesmo padrão robusto do dashboard
-    if (window.location.hash.includes('access_token')) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-
-    let session = null;
     try {
-      const { data } = await supabase.auth.getSession();
-      session = data.session;
-    } catch(e) {}
+      if (!areaId || !AREA_NAMES[areaId]) {
+        window.location.href = 'dashboard.html';
+        return;
+      }
 
-    if (!session) {
-      window.location.href = 'index.html';
-      return;
+      // Mesmo padrão exato do dashboard.html que funciona
+      if (window.location.hash.includes('access_token')) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
+      let { data: { session } } = await supabase.auth.getSession();
+
+      // Fallback: aguarda auth state change (mesmo que dashboard)
+      if (!session) {
+        session = await new Promise((resolve) => {
+          const { data: ref } = supabase.auth.onAuthStateChange((event, sess) => {
+            if (sess) {
+              ref.subscription.unsubscribe();
+              resolve(sess);
+            }
+          });
+          setTimeout(() => { ref.subscription.unsubscribe(); resolve(null); }, 5000);
+        });
+      }
+
+      if (!session) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const email = session.user?.email || session.email;
+      if (!email) { showError('Email não encontrado na sessão.'); return; }
+
+      // Verificar acesso
+      const isAdmin = email === 'leonardo@rsabr.adv.br';
+      let hasAccess = isAdmin;
+
+      if (!hasAccess) {
+        const { data: purchases } = await supabase
+          .from('skills_purchases')
+          .select('area')
+          .eq('email', email);
+        const unlockedAreas = purchases ? purchases.map(p => p.area) : [];
+        hasAccess = unlockedAreas.includes('all') || unlockedAreas.includes(areaId);
+      }
+
+      if (!hasAccess) {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      // Atualizar textos da página
+      const areaName = AREA_NAMES[areaId];
+      document.title = `Skills de ${areaName} — Skills Jurídicas com IA`;
+      document.getElementById('headerAreaName').textContent = areaName;
+      document.getElementById('breadAreaName').textContent = areaName;
+      document.getElementById('pageAreaName').textContent = areaName;
+      document.getElementById('pageSubtitle').textContent = AREA_DESCS[areaId] || 'Prompts prontos para usar no Claude.';
+
+      // Buscar skills da área
+      const { data: skills, error: skillsError } = await supabase
+        .from('skills_content')
+        .select('*')
+        .eq('area', areaId)
+        .order('numero', { ascending: true });
+
+      if (skillsError) {
+        showError('Erro ao carregar skills: ' + skillsError.message);
+        return;
+      }
+
+      // Exibir conteúdo
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('contentState').style.display = 'block';
+      animateTutorial();
+      renderSkills(skills || []);
+
+    } catch(err) {
+      showError('Erro inesperado: ' + err.message);
     }
-
-    const email = session.user.email;
-
-    // Verificar se tem acesso à área
-    const { data: purchases } = await supabase
-      .from('skills_purchases')
-      .select('area')
-      .eq('email', email);
-
-    const unlockedAreas = purchases ? purchases.map(p => p.area) : [];
-    const isAdmin = email === 'leonardo@rsabr.adv.br';
-    const hasAccess = isAdmin || unlockedAreas.includes('all') || unlockedAreas.includes(areaId);
-
-    if (!hasAccess) {
-      window.location.href = 'dashboard.html';
-      return;
-    }
-
-    // Atualizar textos da página
-    const areaName = AREA_NAMES[areaId];
-    document.title = `Skills de ${areaName} — Skills Jurídicas com IA`;
-    document.getElementById('headerAreaName').textContent = areaName;
-    document.getElementById('breadAreaName').textContent = areaName;
-    document.getElementById('pageAreaName').textContent = areaName;
-    document.getElementById('pageSubtitle').textContent = AREA_DESCS[areaId] || 'Prompts prontos para usar no Claude.';
-
-    // Buscar skills da área
-    const { data: skills, error } = await supabase
-      .from('skills_content')
-      .select('*')
-      .eq('area', areaId)
-      .order('numero', { ascending: true });
-
-    if (error) {
-      console.error('Erro ao buscar skills:', error);
-    }
-
-    // Exibir conteúdo
-    document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('contentState').style.display = 'block';
-
-    // Animar tutorial
-    animateTutorial();
-
-    // Renderizar skills
-    renderSkills(skills || []);
   }
 
   init();
