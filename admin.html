@@ -692,6 +692,21 @@ window.addEventListener('DOMContentLoaded', function() {
       renderTable(allRecords);
     }
 
+    function groupByEmail(records) {
+      var groups = {};
+      records.forEach(function(rec) {
+        if (!groups[rec.email]) {
+          groups[rec.email] = { email: rec.email, areas: [], created_at: rec.created_at };
+        }
+        groups[rec.email].areas.push(rec.area);
+        // Manter a data mais recente
+        if (rec.created_at > groups[rec.email].created_at) {
+          groups[rec.email].created_at = rec.created_at;
+        }
+      });
+      return Object.values(groups);
+    }
+
     function renderTable(records) {
       var tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
@@ -705,23 +720,26 @@ window.addEventListener('DOMContentLoaded', function() {
       document.getElementById('accessTable').style.display = 'table';
       document.getElementById('emptyState').style.display = 'none';
 
-      records.forEach(function(rec) {
+      var groups = groupByEmail(records);
+
+      groups.forEach(function(group) {
         var tr = document.createElement('tr');
-        tr.setAttribute('data-id', rec.id);
+        var areasBadges = group.areas.map(function(a) {
+          return '<span class="td-area">' + escapeHtml(a) + '</span>';
+        }).join(' ');
+
         tr.innerHTML =
-          '<td class="td-email">' + escapeHtml(rec.email) + '</td>' +
-          '<td><span class="td-area">' + escapeHtml(rec.area) + '</span></td>' +
-          '<td class="td-date">' + formatDate(rec.created_at) + '</td>' +
-          '<td><button class="btn-danger" data-id="' + rec.id + '" data-email="' + escapeHtml(rec.email) + '">Revogar</button></td>';
+          '<td class="td-email">' + escapeHtml(group.email) + '</td>' +
+          '<td style="display:flex;flex-wrap:wrap;gap:4px;padding:12px 16px">' + areasBadges + '</td>' +
+          '<td class="td-date">' + formatDate(group.created_at) + '</td>' +
+          '<td><button class="btn-danger" data-email="' + escapeHtml(group.email) + '">Revogar tudo</button></td>';
         tbody.appendChild(tr);
       });
 
-      // Eventos dos botões revogar
       tbody.querySelectorAll('.btn-danger').forEach(function(btn) {
         btn.addEventListener('click', function() {
-          var id = this.getAttribute('data-id');
           var email = this.getAttribute('data-email');
-          revogarAcesso(id, email, this);
+          revogarAcesso(email, this);
         });
       });
     }
@@ -734,36 +752,33 @@ window.addEventListener('DOMContentLoaded', function() {
         .replace(/"/g, '&quot;');
     }
 
-    async function revogarAcesso(id, email, btn) {
-      if (!confirm('Revogar acesso de ' + email + '?')) return;
+    async function revogarAcesso(email, btn) {
+      if (!confirm('Revogar todos os acessos de ' + email + '?')) return;
 
       btn.disabled = true;
       btn.textContent = '...';
 
-      var { error } = await sb.from('skills_purchases').delete().eq('id', id);
+      var { error } = await sb.from('skills_purchases').delete().eq('email', email);
 
       if (error) {
         showFeedback('feedbackTabela', 'Erro ao revogar: ' + error.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Revogar';
+        btn.textContent = 'Revogar tudo';
         return;
       }
 
-      // Remove linha da tabela sem recarregar tudo
       var tr = btn.closest('tr');
       if (tr) tr.remove();
 
-      // Atualiza allRecords
-      allRecords = allRecords.filter(function(r) { return r.id !== id; });
+      allRecords = allRecords.filter(function(r) { return r.email !== email; });
 
-      showFeedback('feedbackTabela', 'Acesso de ' + email + ' revogado com sucesso.', 'success');
+      showFeedback('feedbackTabela', 'Todos os acessos de ' + email + ' revogados.', 'success');
 
       if (allRecords.length === 0) {
         document.getElementById('accessTable').style.display = 'none';
         document.getElementById('emptyState').style.display = 'block';
       }
 
-      // Limpa feedback após 4s
       setTimeout(function() { hideFeedback('feedbackTabela'); }, 4000);
     }
 
