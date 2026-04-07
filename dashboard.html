@@ -550,7 +550,9 @@
   const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
 
   // Definição das 10 áreas
   const AREAS = [
@@ -652,7 +654,7 @@
     }
 
     if (!currentSession) {
-      window.location.href = 'index.html';
+      document.getElementById('loadingState').innerHTML = '<p style="color:#ff4444;font-family:monospace;font-size:13px">Sessão expirada ou inválida. <a href="index.html" style="color:#00ff88">Clique aqui para entrar novamente.</a></p>';
       return;
     }
 
