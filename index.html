@@ -310,7 +310,14 @@
   const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!window.supabase) {
+    document.getElementById('msg').textContent = 'Erro ao carregar. Tente recarregar a página.';
+    document.getElementById('msg').className = 'message error';
+    document.getElementById('msg').style.display = 'block';
+    document.getElementById('btnSubmit').disabled = true;
+  }
+
+  const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const form = document.getElementById('loginForm');
   const emailInput = document.getElementById('email');
@@ -341,6 +348,7 @@
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (!supabase) return;
 
     const email = emailInput.value.trim().toLowerCase();
 
