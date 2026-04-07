@@ -631,39 +631,39 @@
   }
 
   async function init() {
-    // Processar possível token da URL (magic link redirect)
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const hasHashToken = window.location.hash.includes('access_token');
 
-    if (!session) {
-      // Aguarda o onAuthStateChange capturar o token do hash da URL
-      await new Promise((resolve) => {
-        const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
-          if (event === 'SIGNED_IN' && sess) {
+    // Se tem token no hash, espera o Supabase processar via onAuthStateChange
+    const currentSession = await new Promise((resolve) => {
+      const { data: listener } = supabase.auth.onAuthStateChange((event, sess) => {
+        if (event === 'SIGNED_IN' && sess) {
+          listener.subscription.unsubscribe();
+          resolve(sess);
+        } else if (event === 'INITIAL_SESSION') {
+          if (sess) {
             listener.subscription.unsubscribe();
             resolve(sess);
+          } else if (!hasHashToken) {
+            // Sem token no hash e sem sessão = não está logado
+            listener.subscription.unsubscribe();
+            resolve(null);
           }
-          if (event === 'INITIAL_SESSION') {
-            if (!sess) {
-              listener.subscription.unsubscribe();
-              window.location.href = 'index.html';
-            }
-          }
-        });
-        // Timeout de segurança
-        setTimeout(() => {
-          listener.subscription.unsubscribe();
-          window.location.href = 'index.html';
-        }, 4000);
+          // Se tem hash token, aguarda o SIGNED_IN vir
+        }
       });
-    }
+      // Timeout de segurança
+      setTimeout(() => {
+        listener.subscription.unsubscribe();
+        resolve(null);
+      }, 8000);
+    });
 
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession) {
       window.location.href = 'index.html';
       return;
     }
 
-    const email = currentSession.user.email;
+    const email = currentSession.user ? currentSession.user.email : currentSession.email;
 
     // UI
     document.getElementById('userEmail').textContent = email;
