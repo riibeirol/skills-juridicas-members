@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Skills Jurídicas com IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #161616;
+      --border: #1e1e1e;
+      --green: #00ff88;
+      --green-dim: rgba(0, 255, 136, 0.12);
+      --green-glow: 0 0 24px rgba(0, 255, 136, 0.3);
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --text-muted: #555;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,255,136,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ==================== HEADER ==================== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-logo {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0,255,136,0.4);
+      white-space: nowrap;
+    }
+
+    .header-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--green);
+      background: rgba(0,255,136,0.1);
+      border: 1px solid rgba(0,255,136,0.25);
+      border-radius: 4px;
+      padding: 3px 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-left: 10px;
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-email {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-logout:hover {
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+    }
+
+    /* ==================== MAIN ==================== */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* Loading / acesso negado */
+    #loadingState {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .spinner-big {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #contentState { display: none; }
+
+    /* ==================== SECÇÕES ==================== */
+    .section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ==================== FORM ==================== */
+    .form-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.grow { flex: 1; min-width: 220px; }
+
+    label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    input[type="email"],
+    input[type="text"] {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input[type="email"]:focus,
+    input[type="text"]:focus {
+      border-color: var(--green);
+    }
+
+    /* Checkboxes das áreas */
+    .areas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .area-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      user-select: none;
+    }
+
+    .area-check:hover { border-color: rgba(0,255,136,0.3); }
+
+    .area-check input[type="checkbox"] {
+      accent-color: var(--green);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .area-check span {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .area-check.all-option {
+      border-color: rgba(0,255,136,0.2);
+      background: rgba(0,255,136,0.04);
+    }
+
+    .area-check.all-option span { color: var(--green); }
+
+    /* Botões */
+    .btn-primary {
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 22px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover { opacity: 0.88; box-shadow: var(--green-glow); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: border-color 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-secondary:hover { border-color: var(--green); color: var(--green); }
+
+    .btn-danger {
+      background: transparent;
+      color: #ff6b6b;
+      border: 1px solid rgba(255,107,107,0.3);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-danger:hover { background: rgba(255,107,107,0.1); border-color: #ff6b6b; }
+
+    /* Mensagem de feedback */
+    .feedback {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 14px;
+      display: none;
+    }
+
+    .feedback.success {
+      background: rgba(0,255,136,0.08);
+      border: 1px solid rgba(0,255,136,0.25);
+      color: var(--green);
+      display: block;
+    }
+
+    .feedback.error {
+      background: rgba(255,107,107,0.08);
+      border: 1px solid rgba(255,107,107,0.25);
+      color: #ff6b6b;
+      display: block;
+    }
+
+    /* ==================== TABELA ==================== */
+    .table-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: var(--bg3);
+    }
+
+    th {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #151515;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background: rgba(255,255,255,0.015); }
+
+    .td-email {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .td-area {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+      background: rgba(0,255,136,0.08);
+      border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 4px;
+      padding: 2px 8px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .td-date {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    #tableLoading {
+      text-align: center;
+      padding: 30px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      main { padding: 24px 16px 60px; }
+      .section { padding: 20px 18px; }
+      .user-email { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <span class="header-logo">Skills Jurídicas com IA</span>
+      <span class="header-badge">Admin</span>
+    </div>
+    <div class="header-user">
+      <div class="user-email" id="userEmail">carregando...</div>
+      <button class="btn-logout" id="btnLogout">Sair</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Loading / Acesso negado -->
+  <div id="loadingState">
+    <div class="spinner-big"></div>
+    <div style="font-family: var(--font-mono); font-size: 13px; color: var(--text-dim);">Verificando acesso...</div>
+  </div>
+
+  <!-- Conteúdo admin -->
+  <div id="contentState">
+
+    <!-- ============ ENVIAR ACESSO ============ -->
+    <div class="section">
+      <div class="section-title">Liberar acesso — enviar magic link</div>
+
+      <div class="form-row">
+        <div class="form-group grow">
+          <label for="inputEmail">E-mail do usuário</label>
+          <input type="email" id="inputEmail" placeholder="advogado@escritorio.com.br" />
+        </div>
+      </div>
+
+      <label style="display:block;margin-bottom:10px;">Áreas a liberar</label>
+      <div class="areas-grid" id="areasCheckboxes">
+        <!-- gerado via JS -->
+      </div>
+
+      <button class="btn-primary" id="btnLiberar">Liberar acesso e enviar magic link</button>
+      <div class="feedback" id="feedbackLiberar"></div>
+    </div>
+
+    <!-- ============ GERENCIAR ACESSOS ============ -->
+    <div class="section">
+      <div class="section-title">Acessos existentes</div>
+
+      <div class="table-toolbar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Filtrar por e-mail..." />
+        <button class="btn-secondary" id="btnAtualizar">Atualizar</button>
+      </div>
+
+      <div class="table-wrap">
+        <div id="tableLoading">Carregando registros...</div>
+        <table id="accessTable" style="display:none">
+          <thead>
+            <tr>
+              <th>E-mail</th>
+              <th>Área</th>
+              <th>Data</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none">Nenhum registro encontrado.</div>
+      </div>
+      <div class="feedback" id="feedbackTabela"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+  (function() {
+
+    const SUPABASE_URL     = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
+    const ADMIN_EMAIL      = 'leonardo@rsabr.adv.br';
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+    });
+
+    const AREAS = [
+      { id: 'trabalhista',    nome: 'Trabalhista'    },
+      { id: 'civel',          nome: 'Cível'          },
+      { id: 'penal',          nome: 'Penal'          },
+      { id: 'previdenciario', nome: 'Previdenciário' },
+      { id: 'familia',        nome: 'Família'        },
+      { id: 'tributario',     nome: 'Tributário'     },
+      { id: 'contratos',      nome: 'Contratos'      },
+      { id: 'societario',     nome: 'Societário'     },
+      { id: 'consumidor',     nome: 'Consumidor'     },
+      { id: 'imobiliario',    nome: 'Imobiliário'    },
+    ];
+
+    // Estado local: todos os registros carregados
+    var allRecords = [];
+
+    /* =================== HELPERS =================== */
+    function showFeedback(elId, msg, type) {
+      var el = document.getElementById(elId);
+      el.textContent = msg;
+      el.className = 'feedback ' + type;
+    }
+
+    function hideFeedback(elId) {
+      var el = document.getElementById(elId);
+      el.className = 'feedback';
+    }
+
+    function formatDate(str) {
+      if (!str) return '—';
+      var d = new Date(str);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    /* =================== CHECKBOXES DAS ÁREAS =================== */
+    function buildCheckboxes() {
+      var container = document.getElementById('areasCheckboxes');
+      container.innerHTML = '';
+
+      // Opção "Pack Completo / Todas"
+      var labelAll = document.createElement('label');
+      labelAll.className = 'area-check all-option';
+      labelAll.innerHTML = '<input type="checkbox" id="chk_all" value="all"> <span>Pack Completo (todas)</span>';
+      container.appendChild(labelAll);
+
+      AREAS.forEach(function(area) {
+        var lbl = document.createElement('label');
+        lbl.className = 'area-check';
+        lbl.innerHTML = '<input type="checkbox" id="chk_' + area.id + '" value="' + area.id + '"> <span>' + area.nome + '</span>';
+        container.appendChild(lbl);
+      });
+
+      // Quando selecionar "Todas", marca/desmarca as individuais
+      document.getElementById('chk_all').addEventListener('change', function() {
+        var checked = this.checked;
+        AREAS.forEach(function(area) {
+          document.getElementById('chk_' + area.id).checked = checked;
+        });
+      });
+    }
+
+    function getSelectedAreas() {
+      if (document.getElementById('chk_all').checked) {
+        return ['all'];
+      }
+      var selected = [];
+      AREAS.forEach(function(area) {
+        if (document.getElementById('chk_' + area.id).checked) {
+          selected.push(area.id);
+        }
+      });
+      return selected;
+    }
+
+    /* =================== LIBERAR ACESSO =================== */
+    document.getElementById('btnLiberar').addEventListener('click', async function() {
+      hideFeedback('feedbackLiberar');
+
+      var email = document.getElementById('inputEmail').value.trim().toLowerCase();
+      if (!email) {
+        showFeedback('feedbackLiberar', 'Informe o e-mail do usuário.', 'error');
+        return;
+      }
+
+      var areas = getSelectedAreas();
+      if (areas.length === 0) {
+        showFeedback('feedbackLiberar', 'Selecione pelo menos uma área.', 'error');
+        return;
+      }
+
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Processando...';
+
+      try {
+        // 1. Inserir registro(s) em skills_purchases
+        var inserts = areas.map(function(a) { return { email: email, area: a }; });
+        var { error: insertError } = await sb.from('skills_purchases').insert(inserts);
+
+        if (insertError) {
+          throw new Error('Erro ao inserir registros: ' + insertError.message);
+        }
+
+        // 2. Enviar magic link via OTP
+        var { error: otpError } = await sb.auth.signInWithOtp({
+          email: email,
+          options: { shouldCreateUser: true }
+        });
+
+        if (otpError) {
+          throw new Error('Acesso liberado, mas falha ao enviar magic link: ' + otpError.message);
+        }
+
+        var areasLabel = areas.includes('all') ? 'Pack Completo (todas as áreas)' : areas.join(', ');
+        showFeedback('feedbackLiberar', 'Acesso liberado (' + areasLabel + ') e magic link enviado para ' + email, 'success');
+
+        // Limpar form
+        document.getElementById('inputEmail').value = '';
+        document.getElementById('chk_all').checked = false;
+        AREAS.forEach(function(area) {
+          document.getElementById('chk_' + area.id).checked = false;
+        });
+
+        // Recarregar tabela
+        loadRecords();
+
+      } catch (err) {
+        showFeedback('feedbackLiberar', err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Liberar acesso e enviar magic link';
+      }
+    });
+
+    /* =================== TABELA DE ACESSOS =================== */
+    async function loadRecords() {
+      document.getElementById('tableLoading').style.display = 'block';
+      document.getElementById('accessTable').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'none';
+
+      var { data, error } = await sb
+        .from('skills_purchases')
+        .select('id, email, area, created_at')
+        .order('created_at', { ascending: false });
+
+      document.getElementById('tableLoading').style.display = 'none';
+
+      if (error) {
+        showFeedback('feedbackTabela', 'Erro ao carregar registros: ' + error.message, 'error');
+        return;
+      }
+
+      allRecords = data || [];
+      renderTable(allRecords);
+    }
+
+    function renderTable(records) {
+      var tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      if (records.length === 0) {
+        document.getElementById('accessTable').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('accessTable').style.display = 'table';
+      document.getElementById('emptyState').style.display = 'none';
+
+      records.forEach(function(rec) {
+        var tr = document.createElement('tr');
+        tr.setAttribute('data-id', rec.id);
+        tr.innerHTML =
+          '<td class="td-email">' + escapeHtml(rec.email) + '</td>' +
+          '<td><span class="td-area">' + escapeHtml(rec.area) + '</span></td>' +
+          '<td class="td-date">' + formatDate(rec.created_at) + '</td>' +
+          '<td><button class="btn-danger" data-id="' + rec.id + '" data-email="' + escapeHtml(rec.email) + '">Revogar</button></td>';
+        tbody.appendChild(tr);
+      });
+
+      // Eventos dos botões revogar
+      tbody.querySelectorAll('.btn-danger').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var id = this.getAttribute('data-id');
+          var email = this.getAttribute('data-email');
+          revogarAcesso(id, email, this);
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function revogarAcesso(id, email, btn) {
+      if (!confirm('Revogar acesso de ' + email + '?')) return;
+
+      btn.disabled = true;
+      btn.textContent = '...';
+
+      var { error } = await sb.from('skills_purchases').delete().eq('id', id);
+
+      if (error) {
+        showFeedback('feedbackTabela', 'Erro ao revogar: ' + error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Revogar';
+        return;
+      }
+
+      // Remove linha da tabela sem recarregar tudo
+      var tr = btn.closest('tr');
+      if (tr) tr.remove();
+
+      // Atualiza allRecords
+      allRecords = allRecords.filter(function(r) { return r.id !== id; });
+
+      showFeedback('feedbackTabela', 'Acesso de ' + email + ' revogado com sucesso.', 'success');
+
+      if (allRecords.length === 0) {
+        document.getElementById('accessTable').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+      }
+
+      // Limpa feedback após 4s
+      setTimeout(function() { hideFeedback('feedbackTabela'); }, 4000);
+    }
+
+    // Busca em tempo real
+    document.getElementById('searchInput').addEventListener('input', function() {
+      var q = this.value.trim().toLowerCase();
+      if (!q) {
+        renderTable(allRecords);
+        return;
+      }
+      var filtered = allRecords.filter(function(r) {
+        return r.email.toLowerCase().includes(q);
+      });
+      renderTable(filtered);
+    });
+
+    // Botão atualizar
+    document.getElementById('btnAtualizar').addEventListener('click', function() {
+      document.getElementById('searchInput').value = '';
+      hideFeedback('feedbackTabela');
+      loadRecords();
+    });
+
+    /* =================== LOGOUT =================== */
+    document.getElementById('btnLogout').addEventListener('click', async function() {
+      await sb.auth.signOut();
+      window.location.href = 'index.html';
+    });
+
+    /* =================== INIT / AUTH =================== */
+    async function init() {
+      // Aguarda processamento do token se vier no hash
+      if (window.location.hash.includes('access_token')) {
+        await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+      }
+
+      var { data: { session: currentSession } } = await sb.auth.getSession();
+
+      if (!currentSession) {
+        currentSession = await new Promise(function(resolve) {
+          var ref = sb.auth.onAuthStateChange(function(event, sess) {
+            if (sess) {
+              ref.data.subscription.unsubscribe();
+              resolve(sess);
+            }
+          });
+          setTimeout(function() {
+            if (ref && ref.data && ref.data.subscription) {
+              ref.data.subscription.unsubscribe();
+            }
+            resolve(null);
+          }, 5000);
+        });
+      }
+
+      var loadingEl = document.getElementById('loadingState');
+
+      if (!currentSession) {
+        loadingEl.innerHTML = '<p style="color:#ff4444;font-family:monospace;font-size:13px">Sessão expirada. <a href="index.html" style="color:#00ff88">Entrar novamente.</a></p>';
+        return;
+      }
+
+      var email = (currentSession.user && currentSession.user.email) || currentSession.email;
+
+      if (email !== ADMIN_EMAIL) {
+        loadingEl.innerHTML =
+          '<p style="color:#ff4444;font-family:monospace;font-size:16px;margin-bottom:12px">Acesso negado.</p>' +
+          '<p style="font-family:monospace;font-size:12px;color:#888">Esta área é restrita ao administrador.</p>';
+        setTimeout(function() { window.location.href = 'dashboard.html'; }, 3000);
+        return;
+      }
+
+      // É o admin — exibir painel
+      document.getElementById('userEmail').textContent = email;
+      loadingEl.style.display = 'none';
+      document.getElementById('contentState').style.display = 'block';
+
+      buildCheckboxes();
+      loadRecords();
+    }
+
+    init();
+
+  })();
+});
+</script>
+
+</body>
+</html>

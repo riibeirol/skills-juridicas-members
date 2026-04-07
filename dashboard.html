@@ -533,8 +533,8 @@
         <div class="pack-desc">Acesso ilimitado a todas as 73 skills jurídicas com IA. Trabalhista, Cível, Penal e muito mais.</div>
       </div>
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-        <div class="pack-price"><span>R$470</span>R$297</div>
-        <a href="#" class="btn-pack" id="btnPackCompleto">Quero o pack completo</a>
+        <div class="pack-price"><span>R$2.940</span>R$197</div>
+        <a href="https://pay.cakto.com.br/6wyf5au_840338" class="btn-pack" id="btnPackCompleto" target="_blank">Quero o pack completo</a>
       </div>
     </div>
 
@@ -555,18 +555,32 @@
     auth: { detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
   });
 
+  // Links individuais por área (atualizar conforme necessário)
+  const CAKTO_URLS = {
+    trabalhista:    'https://pay.cakto.com.br/i66ibkg_840357',
+    civel:          'https://pay.cakto.com.br/i66ibkg_840357',
+    penal:          'https://pay.cakto.com.br/i66ibkg_840357',
+    previdenciario: 'https://pay.cakto.com.br/i66ibkg_840357',
+    familia:        'https://pay.cakto.com.br/i66ibkg_840357',
+    tributario:     'https://pay.cakto.com.br/i66ibkg_840357',
+    contratos:      'https://pay.cakto.com.br/i66ibkg_840357',
+    societario:     'https://pay.cakto.com.br/i66ibkg_840357',
+    consumidor:     'https://pay.cakto.com.br/i66ibkg_840357',
+    imobiliario:    'https://pay.cakto.com.br/i66ibkg_840357',
+  };
+
   // Definição das 10 áreas
   const AREAS = [
-    { id: 'trabalhista',   nome: 'Trabalhista',    icon: '⚖️',  skills: 11, caktoUrl: '#' },
-    { id: 'civel',         nome: 'Cível',           icon: '📋',  skills: 8,  caktoUrl: '#' },
-    { id: 'penal',         nome: 'Penal',            icon: '🔒',  skills: 8,  caktoUrl: '#' },
-    { id: 'previdenciario',nome: 'Previdenciário',   icon: '🛡️',  skills: 8,  caktoUrl: '#' },
-    { id: 'familia',       nome: 'Família',          icon: '👨‍👩‍👧',  skills: 8,  caktoUrl: '#' },
-    { id: 'tributario',    nome: 'Tributário',       icon: '🧾',  skills: 6,  caktoUrl: '#' },
-    { id: 'contratos',     nome: 'Contratos',        icon: '📝',  skills: 6,  caktoUrl: '#' },
-    { id: 'societario',    nome: 'Societário',       icon: '🏢',  skills: 6,  caktoUrl: '#' },
-    { id: 'consumidor',    nome: 'Consumidor',       icon: '🛒',  skills: 6,  caktoUrl: '#' },
-    { id: 'imobiliario',   nome: 'Imobiliário',      icon: '🏠',  skills: 6,  caktoUrl: '#' },
+    { id: 'trabalhista',   nome: 'Trabalhista',    icon: '⚖️',  skills: 11, caktoUrl: CAKTO_URLS.trabalhista    },
+    { id: 'civel',         nome: 'Cível',           icon: '📋',  skills: 8,  caktoUrl: CAKTO_URLS.civel          },
+    { id: 'penal',         nome: 'Penal',            icon: '🔒',  skills: 8,  caktoUrl: CAKTO_URLS.penal          },
+    { id: 'previdenciario',nome: 'Previdenciário',   icon: '🛡️',  skills: 8,  caktoUrl: CAKTO_URLS.previdenciario },
+    { id: 'familia',       nome: 'Família',          icon: '👨‍👩‍👧',  skills: 8,  caktoUrl: CAKTO_URLS.familia       },
+    { id: 'tributario',    nome: 'Tributário',       icon: '🧾',  skills: 6,  caktoUrl: CAKTO_URLS.tributario     },
+    { id: 'contratos',     nome: 'Contratos',        icon: '📝',  skills: 6,  caktoUrl: CAKTO_URLS.contratos      },
+    { id: 'societario',    nome: 'Societário',       icon: '🏢',  skills: 6,  caktoUrl: CAKTO_URLS.societario     },
+    { id: 'consumidor',    nome: 'Consumidor',       icon: '🛒',  skills: 6,  caktoUrl: CAKTO_URLS.consumidor     },
+    { id: 'imobiliario',   nome: 'Imobiliário',      icon: '🏠',  skills: 6,  caktoUrl: CAKTO_URLS.imobiliario   },
   ];
 
   function getFirstName(email) {
