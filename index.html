@@ -380,40 +380,53 @@ window.addEventListener('DOMContentLoaded', async function() {
 
   function startResendTimer(email, supabase) {
     const resendDiv = document.getElementById('resendArea');
-    const countdownEl = document.getElementById('countdown');
     const resendBtn = document.getElementById('resendBtn');
     resendDiv.style.display = 'block';
+    resendBtn.disabled = true;
 
     let seconds = 60;
-    countdownEl.textContent = seconds + 's';
-    resendBtn.disabled = true;
+    resendBtn.innerHTML = 'Reenviar em <span style="color:#00ff88">' + seconds + 's</span>';
+
+    // Clone para remover listeners antigos
+    const newBtn = resendBtn.cloneNode(true);
+    resendBtn.parentNode.replaceChild(newBtn, resendBtn);
+    newBtn.disabled = true;
+    newBtn.innerHTML = 'Reenviar em <span style="color:#00ff88">' + seconds + 's</span>';
 
     const interval = setInterval(function() {
       seconds--;
-      countdownEl.textContent = seconds + 's';
-      if (seconds <= 0) {
+      if (seconds > 0) {
+        newBtn.innerHTML = 'Reenviar em <span style="color:#00ff88">' + seconds + 's</span>';
+      } else {
         clearInterval(interval);
-        countdownEl.textContent = '';
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Reenviar link';
+        newBtn.disabled = false;
+        newBtn.innerHTML = 'Reenviar link →';
+        newBtn.style.color = '#00ff88';
+        newBtn.style.borderColor = '#00ff88';
       }
     }, 1000);
 
-    resendBtn.onclick = async function() {
-      resendBtn.disabled = true;
-      resendBtn.textContent = 'Reenviando...';
-      try {
-        await supabase.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: window.location.origin + '/dashboard.html' },
-        });
-        resendBtn.textContent = 'Reenviado ✓';
-        setTimeout(function() { startResendTimer(email, supabase); }, 500);
-      } catch(e) {
-        resendBtn.disabled = false;
-        resendBtn.textContent = 'Reenviar link';
+    newBtn.addEventListener('click', async function() {
+      newBtn.disabled = true;
+      newBtn.innerHTML = 'Enviando...';
+      newBtn.style.color = '#888';
+      newBtn.style.borderColor = '#1e1e1e';
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin + '/dashboard.html' },
+      });
+
+      if (error) {
+        newBtn.disabled = false;
+        newBtn.innerHTML = 'Reenviar link →';
+        newBtn.style.color = '#00ff88';
+        showMsg('Erro ao reenviar. Aguarde alguns minutos.', 'error');
+      } else {
+        newBtn.innerHTML = 'Enviado ✓';
+        setTimeout(function() { startResendTimer(email, supabase); }, 1500);
       }
-    };
+    });
   }
 }); // DOMContentLoaded
 </script>
