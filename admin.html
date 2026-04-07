@@ -615,34 +615,38 @@ window.addEventListener('DOMContentLoaded', function() {
       btn.textContent = 'Processando...';
 
       try {
-        // 1. Inserir registro(s) em skills_purchases
-        var inserts = areas.map(function(a) { return { email: email, area: a }; });
-        var { error: insertError } = await sb.from('skills_purchases').insert(inserts);
-
-        if (insertError) {
-          throw new Error('Erro ao inserir registros: ' + insertError.message);
-        }
-
-        // 2. Enviar magic link via Edge Function (usa Resend, sem rate limit do SMTP)
+        // Chamar Edge Function para cada área selecionada
+        // A função insere em skills_purchases E envia o magic link (via Resend)
         var areaForEmail = areas.includes('all') ? 'all' : areas[0];
-        var fnRes = await fetch('https://fizgujocdsnnvmwbrvgq.supabase.co/functions/v1/cakto-webhook', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y'
-          },
-          body: JSON.stringify({
-            event: 'purchase_approved',
-            data: {
-              customer: { email: email },
-              product: { id: areaForEmail === 'all' ? '6wyf5au_840338' : 'i66ibkg_840357', name: 'Skills Jurídicas com IA — ' + areaForEmail },
-              purchase: { id: 'admin-manual-' + Date.now() }
-            }
-          })
-        });
-        if (!fnRes.ok) {
-          var fnErr = await fnRes.text();
-          throw new Error('Falha ao enviar magic link: ' + fnErr);
+
+        // Para áreas individuais: não enviar product ID fixo — usar nome para detectar corretamente
+        // Para 'all': usar o ID real do produto pack completo
+        var areasToProcess = areas.includes('all') ? ['all'] : areas;
+
+        for (var i = 0; i < areasToProcess.length; i++) {
+          var areaKey = areasToProcess[i];
+          var productId = areaKey === 'all' ? '6wyf5au_840338' : '';
+          var productName = areaKey === 'all' ? 'pack completo' : areaKey; // PRODUCT_MAP usa as chaves exatas
+
+          var fnRes = await fetch('https://fizgujocdsnnvmwbrvgq.supabase.co/functions/v1/cakto-webhook', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y'
+            },
+            body: JSON.stringify({
+              event: 'purchase_approved',
+              data: {
+                customer: { email: email },
+                product: { id: productId, name: productName },
+                purchase: { id: 'admin-manual-' + Date.now() }
+              }
+            })
+          });
+          if (!fnRes.ok) {
+            var fnErr = await fnRes.text();
+            throw new Error('Falha na área ' + areaKey + ': ' + fnErr);
+          }
         }
 
         var areasLabel = areas.includes('all') ? 'Pack Completo (todas as áreas)' : areas.join(', ');
