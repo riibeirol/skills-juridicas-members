@@ -696,10 +696,12 @@ window.addEventListener('DOMContentLoaded', function() {
       var groups = {};
       records.forEach(function(rec) {
         if (!groups[rec.email]) {
-          groups[rec.email] = { email: rec.email, areas: [], created_at: rec.created_at };
+          groups[rec.email] = { email: rec.email, areas: {}, created_at: rec.created_at };
         }
-        groups[rec.email].areas.push(rec.area);
-        // Manter a data mais recente
+        // Deduplicar: chave = area, valor = id do registro
+        if (!groups[rec.email].areas[rec.area]) {
+          groups[rec.email].areas[rec.area] = rec.id;
+        }
         if (rec.created_at > groups[rec.email].created_at) {
           groups[rec.email].created_at = rec.created_at;
         }
@@ -724,18 +726,37 @@ window.addEventListener('DOMContentLoaded', function() {
 
       groups.forEach(function(group) {
         var tr = document.createElement('tr');
-        var areasBadges = group.areas.map(function(a) {
-          return '<span class="td-area">' + escapeHtml(a) + '</span>';
-        }).join(' ');
+
+        // Badges com X por área
+        var areasBadges = Object.entries(group.areas).map(function(entry) {
+          var area = entry[0], id = entry[1];
+          return '<span class="td-area" style="display:inline-flex;align-items:center;gap:4px">' +
+            escapeHtml(area) +
+            '<button class="btn-remove-area" data-id="' + id + '" data-email="' + escapeHtml(group.email) + '" data-area="' + escapeHtml(area) + '" ' +
+            'style="background:none;border:none;color:rgba(0,255,136,0.5);cursor:pointer;font-size:12px;padding:0;line-height:1" title="Remover esta área">×</button>' +
+            '</span>';
+        }).join('');
 
         tr.innerHTML =
           '<td class="td-email">' + escapeHtml(group.email) + '</td>' +
-          '<td style="display:flex;flex-wrap:wrap;gap:4px;padding:12px 16px">' + areasBadges + '</td>' +
+          '<td style="padding:12px 16px"><div style="display:flex;flex-wrap:wrap;gap:4px">' + areasBadges + '</div></td>' +
           '<td class="td-date">' + formatDate(group.created_at) + '</td>' +
           '<td><button class="btn-danger" data-email="' + escapeHtml(group.email) + '">Revogar tudo</button></td>';
         tbody.appendChild(tr);
       });
 
+      // X por área
+      tbody.querySelectorAll('.btn-remove-area').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var id = this.getAttribute('data-id');
+          var email = this.getAttribute('data-email');
+          var area = this.getAttribute('data-area');
+          revogarArea(id, email, area, this);
+        });
+      });
+
+      // Revogar tudo
       tbody.querySelectorAll('.btn-danger').forEach(function(btn) {
         btn.addEventListener('click', function() {
           var email = this.getAttribute('data-email');
@@ -750,6 +771,31 @@ window.addEventListener('DOMContentLoaded', function() {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+    }
+
+    async function revogarArea(id, email, area, btn) {
+      btn.disabled = true;
+      btn.textContent = '…';
+
+      // Deletar todos os registros duplicados dessa área para esse email
+      var { error } = await sb.from('skills_purchases').delete().eq('email', email).eq('area', area);
+
+      if (error) {
+        showFeedback('feedbackTabela', 'Erro ao remover área: ' + error.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '×';
+        return;
+      }
+
+      // Remove o badge da UI
+      var badge = btn.closest('span.td-area');
+      if (badge) badge.remove();
+
+      // Atualiza allRecords
+      allRecords = allRecords.filter(function(r) { return !(r.email === email && r.area === area); });
+
+      showFeedback('feedbackTabela', 'Área "' + area + '" removida de ' + email, 'success');
+      setTimeout(function() { hideFeedback('feedbackTabela'); }, 3000);
     }
 
     async function revogarAcesso(email, btn) {
