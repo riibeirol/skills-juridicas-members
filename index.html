@@ -307,49 +307,40 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+window.addEventListener('DOMContentLoaded', async function() {
   const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
-
-  if (!window.supabase) {
-    document.getElementById('msg').textContent = 'Erro ao carregar. Tente recarregar a página.';
-    document.getElementById('msg').className = 'message error';
-    document.getElementById('msg').style.display = 'block';
-    document.getElementById('btnSubmit').disabled = true;
-  }
-
-  const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
   const form = document.getElementById('loginForm');
   const emailInput = document.getElementById('email');
   const btn = document.getElementById('btnSubmit');
   const msg = document.getElementById('msg');
 
+  // Bloqueia submit padrão imediatamente
+  form.addEventListener('submit', function(e) { e.preventDefault(); });
+
   function showMsg(text, type) {
     msg.textContent = text;
-    msg.className = `message ${type}`;
+    msg.className = 'message ' + type;
     msg.style.display = 'block';
-    if (type === 'success') {
-      // Anima entrada
-      msg.style.opacity = '0';
-      requestAnimationFrame(() => {
-        msg.style.transition = 'opacity 0.4s';
-        msg.style.opacity = '1';
-      });
-    }
   }
 
-  // Verificar sessão ativa — se sim, redireciona direto para o dashboard
-  (async () => {
+  if (!window.supabase) {
+    showMsg('Erro ao carregar. Recarregue a página.', 'error');
+    btn.disabled = true;
+    return;
+  }
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Verificar sessão ativa
+  try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      window.location.href = 'dashboard.html';
-    }
-  })();
+    if (session) { window.location.href = 'dashboard.html'; return; }
+  } catch(e) {}
 
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
-    if (!supabase) return;
-
     const email = emailInput.value.trim().toLowerCase();
 
     if (!email || !email.includes('@')) {
@@ -358,7 +349,6 @@
       return;
     }
 
-    // UI: loading
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Enviando link...';
     msg.style.display = 'none';
@@ -366,27 +356,22 @@
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard.html`,
-        },
+        options: { emailRedirectTo: window.location.origin + '/dashboard.html' },
       });
 
       if (error) throw error;
 
-      // Sucesso
       form.querySelector('.form-group').style.display = 'none';
       btn.style.display = 'none';
-      showMsg(
-        '✓ Verifique seu email — enviamos o link de acesso.\n\nClique no link recebido para entrar na plataforma.',
-        'success'
-      );
+      showMsg('✓ Verifique seu email — enviamos o link de acesso. Clique no link para entrar.', 'success');
     } catch (err) {
       console.error(err);
       btn.disabled = false;
       btn.textContent = 'Entrar com link de acesso';
-      showMsg('Erro ao enviar o link. Tente novamente ou verifique o email informado.', 'error');
+      showMsg('Erro ao enviar o link. Tente novamente.', 'error');
     }
   });
+}); // DOMContentLoaded
 </script>
 
 </body>
