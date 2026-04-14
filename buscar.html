@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscar Skills — Skills Jurídicas com IA</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #111111;
+      --bg3: #161616;
+      --border: #1e1e1e;
+      --green: #00ff88;
+      --green-dim: rgba(0, 255, 136, 0.12);
+      --green-glow: 0 0 24px rgba(0, 255, 136, 0.3);
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --text-muted: #555;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 40% at 50% -5%, rgba(0,255,136,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* HEADER */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .header-logo {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--green);
+      text-shadow: 0 0 12px rgba(0,255,136,0.4);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .header-back {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .header-back:hover { color: var(--green); }
+
+    /* MAIN */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    .page-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    .page-heading {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .page-sub {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 36px;
+    }
+
+    /* SEARCH BOX */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 12px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    #searchInput {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 18px 18px 52px;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    #searchInput::placeholder { color: var(--text-muted); }
+
+    #searchInput:focus {
+      border-color: rgba(0,255,136,0.4);
+      box-shadow: 0 0 0 3px rgba(0,255,136,0.08);
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.2s;
+    }
+    .search-clear:hover { color: var(--text); }
+
+    /* FILTROS DE ÁREA */
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .filter-btn {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+      border-color: rgba(0,255,136,0.3);
+      color: var(--text);
+    }
+
+    .filter-btn.active {
+      background: var(--green-dim);
+      border-color: rgba(0,255,136,0.4);
+      color: var(--green);
+    }
+
+    /* STATS */
+    .search-stats {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      min-height: 18px;
+    }
+
+    /* RESULTADOS */
+    #results { display: flex; flex-direction: column; gap: 12px; }
+
+    /* SKILL CARD */
+    .skill-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .skill-card:hover { border-color: rgba(0,255,136,0.2); }
+
+    .skill-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .skill-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 24px;
+      padding-top: 2px;
+    }
+
+    .skill-info { flex: 1; min-width: 0; }
+
+    .skill-area-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--green);
+      background: var(--green-dim);
+      border: 1px solid rgba(0,255,136,0.15);
+      border-radius: 4px;
+      padding: 2px 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .skill-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .skill-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .skill-toggle {
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: transform 0.2s, color 0.2s;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .skill-card.expanded .skill-toggle {
+      transform: rotate(45deg);
+      color: var(--green);
+    }
+
+    /* SKILL BODY */
+    .skill-body {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 20px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .skill-card.expanded .skill-body { display: block; }
+
+    .prompt-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+
+    .prompt-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .btn-copy {
+      background: var(--green-dim);
+      border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--green);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-copy:hover {
+      background: rgba(0,255,136,0.2);
+      box-shadow: var(--green-glow);
+    }
+
+    .btn-copy.copied {
+      background: rgba(0,255,136,0.25);
+      color: #fff;
+    }
+
+    .prompt-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .prompt-text::-webkit-scrollbar { width: 4px; }
+    .prompt-text::-webkit-scrollbar-track { background: transparent; }
+    .prompt-text::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* EMPTY / LOADING */
+    .state-box {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+    }
+
+    .state-box .icon { font-size: 36px; margin-bottom: 16px; }
+    .state-box h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .state-box p { font-size: 13px; line-height: 1.6; }
+
+    /* Sugestões */
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .suggestion {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .suggestion:hover {
+      border-color: rgba(0,255,136,0.3);
+      color: var(--green);
+    }
+
+    /* Highlight de busca */
+    mark {
+      background: rgba(0,255,136,0.2);
+      color: var(--green);
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    @media (max-width: 640px) {
+      main { padding: 32px 16px 60px; }
+      .page-heading { font-size: 22px; }
+      #searchInput { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="dashboard.html" class="header-logo">Skills Jurídicas</a>
+    <a href="dashboard.html" class="header-back">← Voltar ao dashboard</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-title">Busca Inteligente</div>
+  <h1 class="page-heading">Encontre a skill certa</h1>
+  <p class="page-sub">Digite o que você precisa — petição, contestação, recurso, cálculo — e a skill aparece.</p>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Ex: contestação trabalhista, habeas corpus, mandado de segurança..."
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button class="search-clear" id="searchClear" title="Limpar">✕</button>
+  </div>
+
+  <div class="filters" id="filtersContainer">
+    <button class="filter-btn active" data-area="all">Todas as áreas</button>
+  </div>
+
+  <div class="search-stats" id="searchStats"></div>
+
+  <div id="results">
+    <div class="state-box" id="initialState">
+      <div class="icon">⚖️</div>
+      <h3>411 skills disponíveis</h3>
+      <p>Digite acima para encontrar a skill que você precisa.<br>Funciona por nome, tipo de peça, situação jurídica.</p>
+      <div class="suggestions">
+        <span class="suggestion" onclick="buscar('petição inicial')">petição inicial</span>
+        <span class="suggestion" onclick="buscar('habeas corpus')">habeas corpus</span>
+        <span class="suggestion" onclick="buscar('rescisória')">verbas rescisórias</span>
+        <span class="suggestion" onclick="buscar('mandado de segurança')">mandado de segurança</span>
+        <span class="suggestion" onclick="buscar('contestação')">contestação</span>
+        <span class="suggestion" onclick="buscar('tutela')">tutela antecipada</span>
+        <span class="suggestion" onclick="buscar('recurso')">recurso</span>
+        <span class="suggestion" onclick="buscar('LGPD')">LGPD</span>
+        <span class="suggestion" onclick="buscar('divórcio')">divórcio</span>
+        <span class="suggestion" onclick="buscar('INSS')">INSS / previdência</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Fuse.js (busca fuzzy) -->
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
+
+<script>
+(async () => {
+  const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpemd1am9jZHNubnZtd2JydmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzODQ0NTgsImV4cCI6MjA4OTk2MDQ1OH0.6MmNrBq8c8ZaNDycvXRpKYPvmjeWRw6fmM1MNabFA9Y';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const AREA_LABELS = {
+    trabalhista:    'Trabalhista',
+    civel:          'Cível',
+    tributario:     'Tributário',
+    penal:          'Penal',
+    familia:        'Família',
+    previdenciario: 'Previdenciário',
+    imobiliario:    'Imobiliário',
+    contratos:      'Contratos',
+    consumidor:     'Consumidor',
+    digital:        'Digital/LGPD',
+    saude:          'Saúde',
+    bancario:       'Bancário',
+    ambiental:      'Ambiental',
+    administrativo: 'Administrativo',
+    desportivo:     'Desportivo',
+    aeronautico:    'Aeronáutico',
+    militar:        'Militar',
+    societario:     'Societário',
+    regulatorio:    'Regulatório',
+    eleitoral:      'Eleitoral',
+    agrario:        'Agrário',
+    internacional:  'Internacional',
+  };
+
+  let allSkills = [];
+  let fuse = null;
+  let activeArea = 'all';
+  let unlockedAreas = [];
+  let searchTimeout = null;
+
+  // Auth check
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  const email = session.user?.email;
+  const isAdmin = email === 'leonardo@rsabr.adv.br';
+
+  if (isAdmin) {
+    unlockedAreas = ['all'];
+  } else {
+    const { data: purchases } = await sb
+      .from('skills_purchases')
+      .select('area')
+      .eq('email', email);
+    unlockedAreas = purchases ? purchases.map(p => p.area) : [];
+  }
+
+  // Carregar skills (apenas das áreas desbloqueadas)
+  async function loadSkills() {
+    document.getElementById('searchStats').textContent = 'Carregando skills...';
+
+    let query = sb.from('skills_content').select('*').order('area').order('numero');
+
+    if (!unlockedAreas.includes('all')) {
+      if (unlockedAreas.length === 0) {
+        allSkills = [];
+        document.getElementById('searchStats').textContent = 'Nenhuma área desbloqueada.';
+        return;
+      }
+      query = query.in('area', unlockedAreas);
+    }
+
+    const { data, error } = await query;
+    if (error || !data) {
+      document.getElementById('searchStats').textContent = 'Erro ao carregar skills.';
+      return;
+    }
+
+    allSkills = data;
+
+    // Inicializar Fuse.js com pesos por campo
+    fuse = new Fuse(allSkills, {
+      keys: [
+        { name: 'nome',        weight: 3 },
+        { name: 'descricao',   weight: 2 },
+        { name: 'quando_usar', weight: 1.5 },
+        { name: 'area',        weight: 0.5 },
+      ],
+      threshold: 0.35,
+      includeScore: true,
+      includeMatches: true,
+      minMatchCharLength: 2,
+      ignoreLocation: true,
+      useExtendedSearch: true,
+    });
+
+    // Construir filtros de área
+    buildFilters();
+
+    document.getElementById('searchStats').textContent = `${allSkills.length} skills carregadas`;
+    setTimeout(() => {
+      document.getElementById('searchStats').textContent = '';
+    }, 2000);
+  }
+
+  function buildFilters() {
+    const areas = [...new Set(allSkills.map(s => s.area))].sort();
+    const container = document.getElementById('filtersContainer');
+    container.innerHTML = '<button class="filter-btn active" data-area="all">Todas as áreas</button>';
+
+    areas.forEach(area => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.dataset.area = area;
+      btn.textContent = AREA_LABELS[area] || area;
+      btn.addEventListener('click', () => setArea(area));
+      container.appendChild(btn);
+    });
+
+    container.querySelector('[data-area="all"]').addEventListener('click', () => setArea('all'));
+  }
+
+  function setArea(area) {
+    activeArea = area;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.area === area);
+    });
+    doSearch(document.getElementById('searchInput').value.trim());
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function highlightText(text, query) {
+    if (!query || !text) return escapeHtml(text);
+    const words = query.trim().split(/\s+/).filter(Boolean);
+    let result = escapeHtml(text);
+    words.forEach(word => {
+      if (word.length < 2) return;
+      const re = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      result = result.replace(re, '<mark>$1</mark>');
+    });
+    return result;
+  }
+
+  function renderResults(skills, query) {
+    const container = document.getElementById('results');
+    document.getElementById('initialState')?.remove();
+
+    if (skills.length === 0) {
+      container.innerHTML = `
+        <div class="state-box">
+          <div class="icon">🔎</div>
+          <h3>Nenhuma skill encontrada</h3>
+          <p>Tente outros termos — tipo de peça, área do direito, situação do caso.</p>
+          <div class="suggestions">
+            <span class="suggestion" onclick="buscar('petição')">petição</span>
+            <span class="suggestion" onclick="buscar('recurso')">recurso</span>
+            <span class="suggestion" onclick="buscar('contrato')">contrato</span>
+            <span class="suggestion" onclick="buscar('indenização')">indenização</span>
+          </div>
+        </div>`;
+      document.getElementById('searchStats').textContent = 'Nenhum resultado';
+      return;
+    }
+
+    document.getElementById('searchStats').textContent =
+      `${skills.length} skill${skills.length !== 1 ? 's' : ''} encontrada${skills.length !== 1 ? 's' : ''}`;
+
+    container.innerHTML = '';
+
+    skills.forEach((skill, i) => {
+      const card = document.createElement('div');
+      card.className = 'skill-card';
+
+      const numStr = String(skill.numero).padStart(2, '0');
+      const areaLabel = AREA_LABELS[skill.area] || skill.area;
+
+      card.innerHTML = `
+        <div class="skill-header">
+          <div class="skill-num">${numStr}</div>
+          <div class="skill-info">
+            <div class="skill-area-badge">${areaLabel}</div>
+            <div class="skill-name">${highlightText(skill.nome, query)}</div>
+            <div class="skill-desc">${highlightText(skill.descricao || '', query)}</div>
+          </div>
+          <div class="skill-toggle">+</div>
+        </div>
+        <div class="skill-body">
+          <div class="prompt-toolbar">
+            <span class="prompt-label">Prompt completo</span>
+            <button class="btn-copy">⧉ Copiar Prompt</button>
+          </div>
+          <div class="prompt-text">${escapeHtml(skill.prompt || '')}</div>
+        </div>
+      `;
+
+      // Toggle
+      const header = card.querySelector('.skill-header');
+      header.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-copy')) return;
+        const expanded = card.classList.contains('expanded');
+        document.querySelectorAll('.skill-card.expanded').forEach(c => {
+          if (c !== card) c.classList.remove('expanded');
+        });
+        card.classList.toggle('expanded', !expanded);
+        if (!expanded) {
+          setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+        }
+      });
+
+      // Copy
+      const btnCopy = card.querySelector('.btn-copy');
+      btnCopy.addEventListener('click', () => {
+        navigator.clipboard.writeText(skill.prompt || '').then(() => {
+          btnCopy.textContent = '✓ Copiado!';
+          btnCopy.classList.add('copied');
+          setTimeout(() => {
+            btnCopy.textContent = '⧉ Copiar Prompt';
+            btnCopy.classList.remove('copied');
+          }, 2000);
+        });
+      });
+
+      container.appendChild(card);
+    });
+  }
+
+  function doSearch(query) {
+    const container = document.getElementById('results');
+
+    if (!query && activeArea === 'all') {
+      container.innerHTML = `
+        <div class="state-box" id="initialState">
+          <div class="icon">⚖️</div>
+          <h3>${allSkills.length} skills disponíveis</h3>
+          <p>Digite acima para encontrar a skill que você precisa.<br>Funciona por nome, tipo de peça, situação jurídica.</p>
+          <div class="suggestions">
+            <span class="suggestion" onclick="buscar('petição inicial')">petição inicial</span>
+            <span class="suggestion" onclick="buscar('habeas corpus')">habeas corpus</span>
+            <span class="suggestion" onclick="buscar('rescisória')">verbas rescisórias</span>
+            <span class="suggestion" onclick="buscar('mandado de segurança')">mandado de segurança</span>
+            <span class="suggestion" onclick="buscar('contestação')">contestação</span>
+            <span class="suggestion" onclick="buscar('tutela')">tutela antecipada</span>
+            <span class="suggestion" onclick="buscar('recurso')">recurso</span>
+            <span class="suggestion" onclick="buscar('LGPD')">LGPD</span>
+            <span class="suggestion" onclick="buscar('divórcio')">divórcio</span>
+            <span class="suggestion" onclick="buscar('INSS')">INSS / previdência</span>
+          </div>
+        </div>`;
+      document.getElementById('searchStats').textContent = '';
+      return;
+    }
+
+    let results;
+
+    if (!query) {
+      // Sem query mas com filtro de área
+      results = allSkills.filter(s => s.area === activeArea);
+    } else {
+      // Fuse.js search
+      const fuseResults = fuse.search(query);
+      results = fuseResults.map(r => r.item);
+    }
+
+    // Filtrar por área se necessário
+    if (activeArea !== 'all') {
+      results = results.filter(s => s.area === activeArea);
+    }
+
+    renderResults(results, query);
+  }
+
+  // Exposta globalmente para sugestões clicáveis
+  window.buscar = function(termo) {
+    const input = document.getElementById('searchInput');
+    input.value = termo;
+    document.getElementById('searchClear').style.display = 'block';
+    doSearch(termo);
+    input.focus();
+  };
+
+  // Eventos do input
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim();
+    searchClear.style.display = q ? 'block' : 'none';
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => doSearch(q), 200);
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    doSearch('');
+    searchInput.focus();
+  });
+
+  // Atalho de teclado: Escape limpa
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && searchInput.value) {
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+      doSearch('');
+    }
+    if (e.key === '/' && document.activeElement !== searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+
+  await loadSkills();
+
+})();
+</script>
+</body>
+</html>
