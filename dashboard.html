@@ -552,12 +552,13 @@
         <div class="pack-desc">Acesso ilimitado a todas as 411 skills jurídicas com IA. Trabalhista, Cível, Penal e muito mais.</div>
       </div>
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-        <div class="pack-price"><span>R$2.940</span>R$197</div>
+        <div class="pack-price"><span>R$2.940</span>R$47</div>
         <a href="https://pay.cakto.com.br/6wyf5au_840338" class="btn-pack" id="btnPackCompleto" target="_blank">Quero o pack completo</a>
       </div>
     </div>
 
     <div class="section-title">Suas áreas</div>
+    <div id="freeUpsellBanner" style="display:none"></div>
     <div class="grid" id="areasGrid"></div>
 
   </div>
@@ -632,9 +633,54 @@
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
 
-  function renderAreas(unlockedAreas) {
+  function renderAreas(unlockedAreas, userEmail) {
     const grid = document.getElementById('areasGrid');
     grid.innerHTML = '';
+
+    const isFreeOnly = unlockedAreas.includes('free') && !unlockedAreas.includes('all') &&
+      unlockedAreas.filter(a => a !== 'free').length === 0;
+
+    // Banner de upsell para usuários no plano gratuito
+    const freeUpsellEl = document.getElementById('freeUpsellBanner');
+    if (isFreeOnly && freeUpsellEl) {
+      const packUrl = 'https://pay.cakto.com.br/6wyf5au_840338' + (userEmail ? '?email=' + encodeURIComponent(userEmail) : '');
+      freeUpsellEl.innerHTML = `
+        <div style="background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:20px 24px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green-neon);letter-spacing:2px;margin-bottom:6px">PLANO GRATUITO</div>
+            <div style="color:var(--text-primary);font-weight:600;font-size:14px;margin-bottom:4px">Você tem 5 skills desbloqueadas.</div>
+            <div style="color:var(--text-secondary);font-size:12px">Desbloqueie qualquer área por R$9,90 — o acesso é adicionado automaticamente a esta conta.</div>
+          </div>
+          <a href="${packUrl}" target="_blank"
+            style="background:var(--green-neon);color:#000;padding:10px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">
+            Pack completo por R$47 →
+          </a>
+        </div>`;
+      freeUpsellEl.style.display = 'block';
+    }
+
+    // Card especial de skills gratuitas
+    if (unlockedAreas.includes('free')) {
+      const freeCard = document.createElement('div');
+      freeCard.className = 'area-card unlocked';
+      freeCard.style.animationDelay = '0s';
+      freeCard.addEventListener('click', (e) => {
+        if (!e.target.closest('a')) window.location.href = 'area.html?area=free';
+      });
+      freeCard.innerHTML = `
+        <div class="card-header">
+          <div class="card-icon">🎁</div>
+          <div class="card-badge badge-unlocked">Gratuito</div>
+        </div>
+        <div class="card-name">Skills Gratuitas</div>
+        <div class="card-meta">
+          <div class="card-meta-dot"></div>
+          5 skills desbloqueadas
+        </div>
+        <a href="area.html?area=free" class="btn-access">Acessar skills →</a>
+      `;
+      grid.appendChild(freeCard);
+    }
 
     let totalUnlocked = 0;
     let totalSkills = 0;
@@ -647,9 +693,11 @@
         totalSkills += area.skills;
       }
 
+      const urlWithEmail = isUnlocked ? '' : (area.caktoUrl + (userEmail ? '?email=' + encodeURIComponent(userEmail) : ''));
+
       const card = document.createElement('div');
       card.className = `area-card ${isUnlocked ? 'unlocked' : 'locked'}`;
-      card.style.animationDelay = `${index * 0.05}s`;
+      card.style.animationDelay = `${(index + (unlockedAreas.includes('free') ? 1 : 0)) * 0.05}s`;
 
       if (isUnlocked) {
         card.addEventListener('click', (e) => {
@@ -673,7 +721,7 @@
         </div>
         ${isUnlocked
           ? `<a href="area.html?area=${area.id}" class="btn-access">Acessar área →</a>`
-          : `<a href="${area.caktoUrl}" class="btn-unlock" target="_blank">Desbloquear — R$47</a>
+          : `<a href="${urlWithEmail}" class="btn-unlock" target="_blank">Desbloquear — R$9,90</a>
              <div class="lock-icon">🔒</div>`
         }
       `;
@@ -682,10 +730,13 @@
     });
 
     document.getElementById('statUnlocked').textContent = totalUnlocked;
-    document.getElementById('statSkills').textContent = totalSkills;
+    document.getElementById('statSkills').textContent = totalSkills + (unlockedAreas.includes('free') ? 5 : 0);
 
-    // Mostrar banner do pack completo se não tem tudo
+    // Banner pack completo se não tem tudo
     if (!unlockedAreas.includes('all') && totalUnlocked < AREAS.length) {
+      const packUrl = 'https://pay.cakto.com.br/6wyf5au_840338' + (userEmail ? '?email=' + encodeURIComponent(userEmail) : '');
+      const btn = document.getElementById('btnPackCompleto');
+      if (btn) btn.href = packUrl;
       document.getElementById('packBanner').style.display = 'flex';
     }
   }
@@ -737,7 +788,7 @@
     }
 
     // Renderizar
-    renderAreas(unlockedAreas);
+    renderAreas(unlockedAreas, email);
 
     // Exibir conteúdo
     document.getElementById('loadingState').style.display = 'none';

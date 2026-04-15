@@ -637,6 +637,19 @@
     societario:     'Societário',
     consumidor:     'Consumidor',
     imobiliario:    'Imobiliário',
+    digital:        'Digital / LGPD',
+    saude:          'Saúde',
+    bancario:       'Bancário',
+    ambiental:      'Ambiental',
+    administrativo: 'Administrativo',
+    desportivo:     'Desportivo',
+    aeronautico:    'Aeronáutico',
+    militar:        'Militar',
+    regulatorio:    'Regulatório',
+    eleitoral:      'Eleitoral',
+    agrario:        'Agrário',
+    internacional:  'Internacional',
+    free:           'Skills Gratuitas',
   };
 
   const AREA_DESCS = {
@@ -650,6 +663,19 @@
     societario:     'Constituição de empresas, acordos e operações societárias.',
     consumidor:     'Ações consumeristas, defesas e peças para o CDC.',
     imobiliario:    'Contratos, ações possessórias, regularização e direito imobiliário.',
+    digital:        'Adequação à LGPD, contratos digitais, proteção de dados e mais.',
+    saude:          'Responsabilidade médica, planos de saúde e direito sanitário.',
+    bancario:       'Contratos bancários, revisões, superendividamento e ações contra bancos.',
+    ambiental:      'Licenciamento, infrações, ações civis públicas e direito ambiental.',
+    administrativo: 'Licitações, contratos administrativos, impugnações e mandados.',
+    desportivo:     'Contratos desportivos, transferências, disciplina e regulamentos.',
+    aeronautico:    'Transporte aéreo, acidentes, indenizações e regulação aeronáutica.',
+    militar:        'Direito militar, disciplina, processos administrativos e benefícios.',
+    regulatorio:    'Agências reguladoras, autorizações, infrações e recursos administrativos.',
+    eleitoral:      'Registro de candidatura, recursos eleitorais e impugnações.',
+    agrario:        'Regularização fundiária, desapropriação, arrendamento e posse rural.',
+    internacional:  'Contratos internacionais, arbitragem, tratados e direito comparado.',
+    free:           '5 skills selecionadas — experimente o poder do Framework P.A.C.E.F.',
   };
 
   // Pegar área da URL
@@ -866,7 +892,7 @@
           .select('area')
           .eq('email', email);
         const unlockedAreas = purchases ? purchases.map(p => p.area) : [];
-        hasAccess = unlockedAreas.includes('all') || unlockedAreas.includes(areaId);
+        hasAccess = unlockedAreas.includes('all') || unlockedAreas.includes(areaId) || areaId === 'free' && unlockedAreas.includes('free');
       }
 
       if (!hasAccess) {
@@ -899,6 +925,23 @@
       document.getElementById('contentState').style.display = 'block';
       animateTutorial();
       renderSkills(skills || []);
+
+      // Upsell para usuários da área free
+      if (areaId === 'free') {
+        const packUrl = 'https://pay.cakto.com.br/6wyf5au_840338' + (email ? '?email=' + encodeURIComponent(email) : '');
+        const upsellDiv = document.createElement('div');
+        upsellDiv.style.cssText = 'margin-top:32px;background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.2);border-radius:14px;padding:28px;text-align:center';
+        upsellDiv.innerHTML = `
+          <div style="font-family:monospace;font-size:10px;color:var(--green-neon);letter-spacing:3px;margin-bottom:12px">QUER MAIS SKILLS?</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text-primary);margin-bottom:8px">Desbloqueie qualquer área por R$9,90</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.7">O acesso é adicionado automaticamente a esta conta — não precisa criar outra.</div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="dashboard.html" style="background:transparent;border:1px solid rgba(0,255,136,0.3);color:var(--green-neon);padding:10px 20px;border-radius:8px;font-family:monospace;font-size:12px;font-weight:700;text-decoration:none">Ver todas as áreas →</a>
+            <a href="${packUrl}" target="_blank" style="background:var(--green-neon);color:#000;padding:10px 20px;border-radius:8px;font-family:monospace;font-size:12px;font-weight:700;text-decoration:none">Pack completo por R$47 →</a>
+          </div>
+        `;
+        document.getElementById('contentState').appendChild(upsellDiv);
+      }
 
     } catch(err) {
       showError('Erro inesperado: ' + err.message);
