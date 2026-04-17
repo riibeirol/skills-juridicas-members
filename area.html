@@ -678,6 +678,16 @@
     free:           '5 skills selecionadas — experimente o poder do Framework P.A.C.E.F.',
   };
 
+  async function track(event, extra = {}) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const email = session.user?.email;
+      if (!email) return;
+      await supabase.from('skills_activity_logs').insert({ user_email: email, event, ...extra });
+    } catch (_) {}
+  }
+
   // Pegar área da URL
   const urlParams = new URLSearchParams(window.location.search);
   const areaId = urlParams.get('area') || '';
@@ -779,6 +789,8 @@
           setTimeout(() => {
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           }, 100);
+          // Registrar visualização da skill
+          track('skill_view', { area: areaId, skill_numero: skill.numero, skill_nome: skill.nome });
         }
       });
 
@@ -799,6 +811,7 @@
         e.stopPropagation();
         const btn = e.currentTarget;
         const prompt = skill.prompt;
+        track('skill_copy', { area: areaId, skill_numero: skill.numero, skill_nome: skill.nome });
         try {
           await navigator.clipboard.writeText(prompt);
           btn.innerHTML = '<span>✓</span> Copiado!';
@@ -925,6 +938,9 @@
       document.getElementById('contentState').style.display = 'block';
       animateTutorial();
       renderSkills(skills || []);
+
+      // Registrar acesso à área
+      track('area_view', { area: areaId });
 
       // Upsell para usuários da área free
       if (areaId === 'free') {

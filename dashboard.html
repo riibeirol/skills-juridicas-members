@@ -741,6 +741,16 @@
     }
   }
 
+  async function track(event, extra = {}) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const email = session.user?.email;
+      if (!email) return;
+      await supabase.from('skills_activity_logs').insert({ user_email: email, event, ...extra });
+    } catch (_) {}
+  }
+
   async function init() {
     // Se tem token no hash, aguarda Supabase processar
     if (window.location.hash.includes('access_token')) {
@@ -793,6 +803,9 @@
     // Exibir conteúdo
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('contentState').style.display = 'block';
+
+    // Registrar acesso ao dashboard
+    track('dashboard_view');
   }
 
   // Logout
