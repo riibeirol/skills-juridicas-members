@@ -345,6 +345,17 @@ window.addEventListener('DOMContentLoaded', async function() {
     if (session) { window.location.href = 'dashboard.html'; return; }
   } catch(e) {}
 
+  // Detectar erros vindos do link de acesso (ex: otp_expired)
+  const hash = new URLSearchParams(window.location.hash.replace('#', ''));
+  const errorCode = hash.get('error_code');
+  if (errorCode === 'otp_expired') {
+    showMsg('⚠️ Este link de acesso expirou ou já foi utilizado.<br>Digite seu email abaixo para receber um novo link.', 'error');
+    history.replaceState(null, '', window.location.pathname);
+  } else if (errorCode) {
+    showMsg('⚠️ Link inválido. Digite seu email para receber um novo link de acesso.', 'error');
+    history.replaceState(null, '', window.location.pathname);
+  }
+
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
     const email = emailInput.value.trim().toLowerCase();
