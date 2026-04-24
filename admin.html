@@ -388,6 +388,60 @@
       color: var(--text);
     }
 
+    .email-link {
+      color: var(--green);
+      text-decoration: none;
+      cursor: pointer;
+      border-bottom: 1px dashed rgba(0,255,136,0.3);
+      padding-bottom: 1px;
+      transition: all 0.15s;
+    }
+    .email-link:hover {
+      color: #fff;
+      border-bottom-color: var(--green);
+    }
+
+    /* Modal de info do lead */
+    .lead-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000; backdrop-filter: blur(4px);
+    }
+    .lead-modal-overlay.active { display: flex; }
+    .lead-modal {
+      background: #0f0f0f; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 28px 32px; max-width: 420px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      font-family: var(--font-mono);
+    }
+    .lead-modal h3 {
+      margin: 0 0 18px; font-size: 13px; letter-spacing: 2px;
+      color: var(--green); text-transform: uppercase;
+    }
+    .lead-modal-row {
+      display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px;
+    }
+    .lead-modal-label {
+      font-size: 10px; letter-spacing: 1.5px; color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .lead-modal-value {
+      font-size: 14px; color: var(--text); word-break: break-all;
+    }
+    .lead-modal-value.copyable { cursor: pointer; }
+    .lead-modal-value.copyable:hover { color: var(--green); }
+    .lead-modal-actions {
+      display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end;
+    }
+    .lead-modal button {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text); padding: 8px 18px; border-radius: 6px;
+      font-family: inherit; font-size: 12px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .lead-modal button:hover { background: rgba(0,255,136,0.1); border-color: var(--green); color: var(--green); }
+    .lead-modal-loading { text-align: center; color: var(--text-muted); padding: 20px 0; font-size: 12px; }
+
     .td-area {
       font-family: var(--font-mono);
       font-size: 11px;
@@ -506,6 +560,19 @@
   </div>
 
 </main>
+
+<!-- Modal info do lead -->
+<div class="lead-modal-overlay" id="leadModal" role="dialog" aria-modal="true">
+  <div class="lead-modal">
+    <h3>Informações do lead</h3>
+    <div id="leadModalContent">
+      <div class="lead-modal-loading">carregando...</div>
+    </div>
+    <div class="lead-modal-actions">
+      <button id="leadModalClose" type="button">fechar (esc)</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
@@ -750,11 +817,19 @@ window.addEventListener('DOMContentLoaded', function() {
         }).join('');
 
         tr.innerHTML =
-          '<td class="td-email">' + escapeHtml(group.email) + '</td>' +
+          '<td class="td-email"><a class="email-link" data-email="' + escapeHtml(group.email) + '" title="Ver dados do lead">' + escapeHtml(group.email) + '</a></td>' +
           '<td style="padding:12px 16px"><div style="display:flex;flex-wrap:wrap;gap:4px">' + areasBadges + '</div></td>' +
           '<td class="td-date">' + formatDate(group.created_at) + '</td>' +
           '<td><button class="btn-danger" data-email="' + escapeHtml(group.email) + '">Revogar tudo</button></td>';
         tbody.appendChild(tr);
+      });
+
+      // Click no email — abre modal com info do lead
+      tbody.querySelectorAll('.email-link').forEach(function(a) {
+        a.addEventListener('click', function(e) {
+          e.preventDefault();
+          openLeadModal(this.getAttribute('data-email'));
+        });
       });
 
       // X por área
@@ -917,6 +992,88 @@ window.addEventListener('DOMContentLoaded', function() {
       buildCheckboxes();
       loadRecords();
     }
+
+    /* =================== MODAL LEAD INFO =================== */
+    var leadModalEl = document.getElementById('leadModal');
+    var leadModalContent = document.getElementById('leadModalContent');
+
+    async function openLeadModal(email) {
+      // Mostra modal em loading
+      leadModalContent.textContent = '';
+      var loading = document.createElement('div');
+      loading.className = 'lead-modal-loading';
+      loading.textContent = 'carregando...';
+      leadModalContent.appendChild(loading);
+      leadModalEl.classList.add('active');
+
+      // Busca dados do lead
+      try {
+        var { data, error } = await sb
+          .from('skills_leads')
+          .select('email, name, phone, created_at')
+          .eq('email', email)
+          .maybeSingle();
+
+        leadModalContent.textContent = '';
+        if (error || !data) {
+          var notFound = document.createElement('div');
+          notFound.className = 'lead-modal-loading';
+          notFound.textContent = 'Lead não encontrado em skills_leads (apenas tem compra registrada)';
+          leadModalContent.appendChild(notFound);
+
+          var rowEmail = buildModalRow('email', email, true);
+          leadModalContent.appendChild(rowEmail);
+          return;
+        }
+
+        leadModalContent.appendChild(buildModalRow('nome', data.name || '—'));
+        leadModalContent.appendChild(buildModalRow('email', data.email, true));
+        leadModalContent.appendChild(buildModalRow('telefone', data.phone || '—', !!data.phone));
+        leadModalContent.appendChild(buildModalRow('cadastrado em', formatDate(data.created_at)));
+      } catch(e) {
+        leadModalContent.textContent = '';
+        var err = document.createElement('div');
+        err.className = 'lead-modal-loading';
+        err.textContent = 'Erro: ' + e.message;
+        leadModalContent.appendChild(err);
+      }
+    }
+
+    function buildModalRow(label, value, copyable) {
+      var row = document.createElement('div');
+      row.className = 'lead-modal-row';
+      var lbl = document.createElement('div');
+      lbl.className = 'lead-modal-label';
+      lbl.textContent = label;
+      var val = document.createElement('div');
+      val.className = 'lead-modal-value' + (copyable ? ' copyable' : '');
+      val.textContent = value;
+      if (copyable) {
+        val.title = 'Clique para copiar';
+        val.addEventListener('click', function() {
+          navigator.clipboard.writeText(value).then(function() {
+            var orig = val.textContent;
+            val.textContent = '✓ copiado';
+            setTimeout(function(){ val.textContent = orig; }, 900);
+          });
+        });
+      }
+      row.appendChild(lbl);
+      row.appendChild(val);
+      return row;
+    }
+
+    function closeLeadModal() {
+      leadModalEl.classList.remove('active');
+    }
+
+    document.getElementById('leadModalClose').addEventListener('click', closeLeadModal);
+    leadModalEl.addEventListener('click', function(e) {
+      if (e.target === leadModalEl) closeLeadModal();
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && leadModalEl.classList.contains('active')) closeLeadModal();
+    });
 
     init();
 
