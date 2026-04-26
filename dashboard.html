@@ -545,18 +545,6 @@
       </div>
     </div>
 
-    <!-- Download Tudo (apenas pack buyers / admin) -->
-    <div id="downloadAllSection" style="display:none;background:linear-gradient(135deg,#0d1f14 0%,#0a1a10 100%);border:1px solid rgba(0,255,136,0.25);border-radius:16px;padding:24px 28px;margin-bottom:24px;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
-      <div style="flex:1;min-width:260px">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#00ff88;letter-spacing:2px;margin-bottom:8px;opacity:0.9">PACK COMPLETO · BENEFÍCIO EXCLUSIVO</div>
-        <div style="color:#e8e8e8;font-weight:600;font-size:15px;margin-bottom:6px">Baixar todas as skills em um arquivo só</div>
-        <div style="color:#888;font-size:13px;line-height:1.6">Gera um ZIP com as 411 skills organizadas por área (22 pastas). Arquivo único, offline, pra consultar sem abrir o painel.</div>
-      </div>
-      <button id="btnDownloadAll" style="background:#00ff88;color:#000;border:none;padding:14px 28px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 0 20px rgba(0,255,136,0.25);flex-shrink:0">
-        ⬇ Baixar tudo (.zip)
-      </button>
-    </div>
-
     <!-- Banner Pack Completo (aparece se não tem tudo) -->
     <div class="pack-banner" id="packBanner" style="display:none">
       <div class="pack-banner-text">
@@ -578,8 +566,6 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script>
 (function() {
   const SUPABASE_URL = 'https://fizgujocdsnnvmwbrvgq.supabase.co';
@@ -814,12 +800,6 @@
     // Renderizar
     renderAreas(unlockedAreas, email);
 
-    // Exibir seção "Baixar tudo" só pra pack buyers / admin
-    if (unlockedAreas.includes('all')) {
-      const sec = document.getElementById('downloadAllSection');
-      if (sec) sec.style.display = 'flex';
-    }
-
     // Exibir conteúdo
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('contentState').style.display = 'block';
@@ -836,90 +816,6 @@
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 80) || 'skill';
-  }
-
-  function skillToMarkdown(s) {
-    const partes = [];
-    partes.push('# ' + s.numero + '. ' + s.nome);
-    partes.push('\nArea: ' + s.area);
-    if (s.descricao) partes.push('\n## Descricao\n\n' + s.descricao);
-    if (s.quando_usar) partes.push('\n## Quando usar\n\n' + s.quando_usar);
-    if (s.prompt) partes.push('\n## Prompt (copie e cole no Claude/ChatGPT)\n\n' + s.prompt);
-    if (s.dicas) partes.push('\n## Dicas\n\n' + s.dicas);
-    partes.push('\n---\nSkills Juridicas com IA - RSA Advocacia');
-    return partes.join('\n');
-  }
-
-  const btnDownloadAll = document.getElementById('btnDownloadAll');
-  if (btnDownloadAll) {
-    btnDownloadAll.addEventListener('click', async () => {
-      const original = btnDownloadAll.textContent;
-      btnDownloadAll.disabled = true;
-      btnDownloadAll.style.opacity = '0.7';
-      btnDownloadAll.textContent = 'Gerando ZIP...';
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const userEmail = session?.user?.email || '';
-
-        const { data, error } = await supabase
-          .from('skills_content')
-          .select('area,numero,nome,descricao,quando_usar,prompt,dicas')
-          .neq('area', 'free')
-          .order('area', { ascending: true })
-          .order('numero', { ascending: true });
-        if (error) throw error;
-        if (!data || !data.length) throw new Error('Nenhuma skill encontrada');
-
-        btnDownloadAll.textContent = 'Montando ' + data.length + ' skills...';
-
-        const zip = new JSZip();
-        const nomesArea = {};
-        (AREAS || []).forEach(a => { nomesArea[a.id] = a.nome; });
-
-        const agora = new Date().toISOString().slice(0,10);
-        zip.file('LEIA-ME.txt',
-          'Skills Juridicas com IA - Pack Completo\n' +
-          'Gerado em ' + agora + ' para ' + userEmail + '\n\n' +
-          'Estrutura:\n' +
-          '  <area>/<numero>-<nome>.md\n\n' +
-          'Como usar:\n' +
-          '  1. Abra qualquer arquivo .md\n' +
-          '  2. Copie o conteudo da secao "Prompt"\n' +
-          '  3. Cole no Claude ou ChatGPT\n' +
-          '  4. Siga as instrucoes - a IA vai perguntar o que falta\n\n' +
-          'Ajuda:\n' +
-          '  Area de membros: https://skills-juridicas-members.pages.dev/\n' +
-          '  Contato: leonardo@rsabr.adv.br\n'
-        );
-
-        data.forEach(s => {
-          const pastaId = s.area || 'outras';
-          const label = nomesArea[pastaId] || pastaId;
-          const folder = pastaId + '-' + slug(label);
-          const nomeArq = String(s.numero).padStart(2, '0') + '-' + slug(s.nome) + '.md';
-          zip.file(folder + '/' + nomeArq, skillToMarkdown(s));
-        });
-
-        btnDownloadAll.textContent = 'Compactando...';
-        const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-        saveAs(blob, 'skills-juridicas-ia-pack-completo-' + agora + '.zip');
-
-        track('download_all', { total_skills: data.length });
-
-        btnDownloadAll.textContent = 'Baixado!';
-        setTimeout(() => {
-          btnDownloadAll.textContent = original;
-          btnDownloadAll.disabled = false;
-          btnDownloadAll.style.opacity = '1';
-        }, 2500);
-      } catch (err) {
-        console.error('[download-all]', err);
-        alert('Erro ao gerar o ZIP: ' + (err?.message || err));
-        btnDownloadAll.textContent = original;
-        btnDownloadAll.disabled = false;
-        btnDownloadAll.style.opacity = '1';
-      }
-    });
   }
 
   // Logout
